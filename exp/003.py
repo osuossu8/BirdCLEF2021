@@ -795,9 +795,9 @@ warnings.filterwarnings("ignore")
 
 logdir = Path(f"out_{CFG.EXP_ID}")
 logdir.mkdir(exist_ok=True, parents=True)
-if (logdir / "train.log").exists():
-    os.remove(logdir / "train.log")
-logger = init_logger(log_file=logdir / "train.log")
+# if (logdir / "train.log").exists():
+#     os.remove(logdir / "train.log")
+logger = init_logger(log_file=Path("logs") / f"train_{CFG.EXP_ID}.log")
 
 
 # environment
