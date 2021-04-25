@@ -637,8 +637,8 @@ class TimmSED(nn.Module):
     def __init__(self, base_model_name: str, pretrained=False, num_classes=24, in_channels=1):
         super().__init__()
         # Spec augmenter
-        # self.spec_augmenter = SpecAugmentation(time_drop_width=64, time_stripes_num=2,
-        #                                        freq_drop_width=8, freq_stripes_num=2)
+        self.spec_augmenter = SpecAugmentation(time_drop_width=64, time_stripes_num=2,
+                                               freq_drop_width=8, freq_stripes_num=2)
 
         self.bn0 = nn.BatchNorm2d(CFG.n_mels)
 
