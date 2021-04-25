@@ -12,6 +12,7 @@ import librosa
 import numpy as np
 import pandas as pd
 import soundfile as sf
+import colorednoise as cn
 import timm
 import torch
 import torch.optim as optim
@@ -294,7 +295,7 @@ class WaveformDataset(torchdata.Dataset):
         y = np.nan_to_num(new_y)
 
         if self.waveform_transforms:
-            y = self.waveform_transforms(samples=y, sample_rate=sr)
+            y = self.waveform_transforms(y)
 
         y = np.nan_to_num(y)
 
@@ -306,13 +307,15 @@ class WaveformDataset(torchdata.Dataset):
         y = self.spectrogram_extractor(y)
         # batch_size x 1 x time_steps x freq_bins
         y = self.logmel_extractor(y)
-        # batch_size x 1 x time_steps x mel_bins
         b, s, h, w = y.size()
 
-        img = y.detach().numpy().reshape(h, w).T
-        img = np.stack([img,img,img], 2)
-        img = albu_transforms[self.mode](image=img)['image']
-        y = img[:,:,0].reshape(1, h, w)
+        if self.mode == 'train':
+            img = y.detach().numpy().reshape(h, w).T
+            img = np.stack([img,img,img], 2)
+            img = albu_transforms[self.mode](image=img)['image']
+            y = img[:,:,0].reshape(1, h, w)
+        else:
+            y = y.reshape(1, h, w)
 
         return {
             "image": y,
@@ -349,6 +352,25 @@ class Normalize:
         return np.asfortranarray(y_vol)
 
 
+# Mostly taken from https://www.kaggle.com/hidehisaarai1213/rfcx-audio-data-augmentation-japanese-english
+class AudioTransform:
+    def __init__(self, always_apply=False, p=0.5):
+        self.always_apply = always_apply
+        self.p = p
+
+    def __call__(self, y: np.ndarray):
+        if self.always_apply:
+            return self.apply(y)
+        else:
+            if np.random.rand() < self.p:
+                return self.apply(y)
+            else:
+                return y
+
+    def apply(self, y: np.ndarray):
+        raise NotImplementedError
+
+
 class Compose:
     def __init__(self, transforms: list):
         self.transforms = transforms
@@ -357,6 +379,97 @@ class Compose:
         for trns in self.transforms:
             y = trns(y)
         return y
+
+
+class OneOf:
+    def __init__(self, transforms: list):
+        self.transforms = transforms
+
+    def __call__(self, y: np.ndarray):
+        n_trns = len(self.transforms)
+        trns_idx = np.random.choice(n_trns)
+        trns = self.transforms[trns_idx]
+        return trns(y)
+
+
+class GaussianNoiseSNR(AudioTransform):
+    def __init__(self, always_apply=False, p=0.5, min_snr=5.0, max_snr=20.0, **kwargs):
+        super().__init__(always_apply, p)
+
+        self.min_snr = min_snr
+        self.max_snr = max_snr
+
+    def apply(self, y: np.ndarray, **params):
+        snr = np.random.uniform(self.min_snr, self.max_snr)
+        a_signal = np.sqrt(y ** 2).max()
+        a_noise = a_signal / (10 ** (snr / 20))
+
+        white_noise = np.random.randn(len(y))
+        a_white = np.sqrt(white_noise ** 2).max()
+        augmented = (y + white_noise * 1 / a_white * a_noise).astype(y.dtype)
+        return augmented
+
+
+class PinkNoiseSNR(AudioTransform):
+    def __init__(self, always_apply=False, p=0.5, min_snr=5.0, max_snr=20.0, **kwargs):
+        super().__init__(always_apply, p)
+
+        self.min_snr = min_snr
+        self.max_snr = max_snr
+
+    def apply(self, y: np.ndarray, **params):
+        snr = np.random.uniform(self.min_snr, self.max_snr)
+        a_signal = np.sqrt(y ** 2).max()
+        a_noise = a_signal / (10 ** (snr / 20))
+
+        pink_noise = cn.powerlaw_psd_gaussian(1, len(y))
+        a_pink = np.sqrt(pink_noise ** 2).max()
+        augmented = (y + pink_noise * 1 / a_pink * a_noise).astype(y.dtype)
+        return augmented
+
+
+class TimeShift(AudioTransform):
+    def __init__(self, always_apply=False, p=0.5, max_shift_second=2, sr=32000, padding_mode="zero"):
+        super().__init__(always_apply, p)
+
+        assert padding_mode in [
+            "replace", "zero"], "`padding_mode` must be either 'replace' or 'zero'"
+        self.max_shift_second = max_shift_second
+        self.sr = sr
+        self.padding_mode = padding_mode
+
+    def apply(self, y: np.ndarray, **params):
+        shift = np.random.randint(-self.sr * self.max_shift_second,
+                                  self.sr * self.max_shift_second)
+        augmented = np.roll(y, shift)
+        return augmented
+
+
+class VolumeControl(AudioTransform):
+    def __init__(self, always_apply=False, p=0.5, db_limit=10, mode="uniform"):
+        super().__init__(always_apply, p)
+
+        assert mode in ["uniform", "fade", "fade", "cosine", "sine"], \
+            "`mode` must be one of 'uniform', 'fade', 'cosine', 'sine'"
+
+        self.db_limit = db_limit
+        self.mode = mode
+
+    def apply(self, y: np.ndarray, **params):
+        db = np.random.uniform(-self.db_limit, self.db_limit)
+        if self.mode == "uniform":
+            db_translated = 10 ** (db / 20)
+        elif self.mode == "fade":
+            lin = np.arange(len(y))[::-1] / (len(y) - 1)
+            db_translated = 10 ** (db * lin / 20)
+        elif self.mode == "cosine":
+            cosine = np.cos(np.arange(len(y)) / len(y) * np.pi * 2)
+            db_translated = 10 ** (db * cosine / 20)
+        else:
+            sine = np.sin(np.arange(len(y)) / len(y) * np.pi * 2)
+            db_translated = 10 ** (db * sine / 20)
+        augmented = y * db_translated
+        return augmented
 
 
 def init_layer(layer):
@@ -524,8 +637,8 @@ class TimmSED(nn.Module):
     def __init__(self, base_model_name: str, pretrained=False, num_classes=24, in_channels=1):
         super().__init__()
         # Spec augmenter
-        self.spec_augmenter = SpecAugmentation(time_drop_width=64, time_stripes_num=2,
-                                               freq_drop_width=8, freq_stripes_num=2)
+        # self.spec_augmenter = SpecAugmentation(time_drop_width=64, time_stripes_num=2,
+        #                                        freq_drop_width=8, freq_stripes_num=2)
 
         self.bn0 = nn.BatchNorm2d(CFG.n_mels)
 
@@ -558,7 +671,8 @@ class TimmSED(nn.Module):
         x = x.transpose(1, 3)
 
         if self.training:
-            x = self.spec_augmenter(x)
+            if random.random() < 0.25:
+                x = self.spec_augmenter(x)
 
         x = x.transpose(2, 3)
         # (batch_size, channels, freq, frames)
@@ -808,21 +922,20 @@ std = (0.229, 0.224, 0.225) # RGB
 
 albu_transforms = {
     'train' : A.Compose([
-        A.HorizontalFlip(p=0.5),
-        A.ShiftScaleRotate(p=0.2, shift_limit=0.0625, scale_limit=0.2, rotate_limit=20),
-        A.CoarseDropout(p=0.2),
-        A.Cutout(max_h_size=16, max_w_size=16, num_holes=5, p=0.5),
-        A.Normalize(mean, std),
-    ]),
-    'valid' : A.Compose([
-        A.Normalize(mean, std),
-    ]),    
+            A.OneOf([
+                A.Cutout(max_h_size=5, max_w_size=20),
+                A.CoarseDropout(max_holes=4),
+                A.RandomBrightness(p=0.25),
+            ], p=0.5)])
 }
 
-audio_augmenter = AD.Compose([
-    AD.AddGaussianNoise(min_amplitude=0.01, max_amplitude=0.03, p=0.2),
-    AD.PitchShift(min_semitones=-3, max_semitones=3, p=0.2),
-    AD.Gain(p=0.2)
+audio_augmenter = Compose([
+            OneOf([
+                GaussianNoiseSNR(min_snr=10),
+                PinkNoiseSNR(min_snr=10)
+            ]),
+            TimeShift(sr=32000),
+            VolumeControl(p=0.5)
 ])
 
 warnings.filterwarnings("ignore")
@@ -875,8 +988,8 @@ for fold in range(5):
     scheduler = get_scheduler(optimizer)
     callbacks = get_callbacks()
 
-    model = model.to(device)
-    model, optimizer = amp.initialize(model, optimizer, opt_level='O1', verbosity=0)
+    # model = model.to(device)
+    # model, optimizer = amp.initialize(model, optimizer, opt_level='O1', verbosity=0)
 
     runner = get_runner(device)
     runner.train(
