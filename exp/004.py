@@ -37,6 +37,8 @@ import albumentations as A
 import albumentations.pytorch.transforms as T
 import audiomentations as AD
 
+from apex import amp
+
 
 class CFG:
     EXP_ID = '004'
@@ -45,7 +47,7 @@ class CFG:
     # Globals #
     ######################
     seed = 6718
-    epochs = 35
+    epochs = 70 # 35
     train = True
     folds = [0]
     img_size = 224
@@ -258,7 +260,6 @@ class WaveformDataset(torchdata.Dataset):
         self.logmel_extractor = LogmelFilterBank(sr=CFG.sample_rate, n_fft=CFG.n_fft,
                                                  n_mels=CFG.n_mels, fmin=CFG.fmin, fmax=CFG.fmax, ref=1.0, amin=1e-10, top_db=None,
                                                  freeze_parameters=True)
-
 
     def __len__(self):
         return len(self.df)
@@ -873,6 +874,10 @@ for fold in range(5):
     optimizer = get_optimizer(model)
     scheduler = get_scheduler(optimizer)
     callbacks = get_callbacks()
+
+    model = model.to(device)
+    model, optimizer = amp.initialize(model, optimizer, opt_level='O1', verbosity=0)
+
     runner = get_runner(device)
     runner.train(
         model=model,
