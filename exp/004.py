@@ -309,13 +309,10 @@ class WaveformDataset(torchdata.Dataset):
         y = self.logmel_extractor(y)
         b, s, h, w = y.size()
 
-        if self.mode == 'train':
-            img = y.detach().numpy().reshape(h, w).T
-            img = np.stack([img,img,img], 2)
-            img = albu_transforms[self.mode](image=img)['image']
-            y = img[:,:,0].reshape(1, h, w)
-        else:
-            y = y.reshape(1, h, w)
+        img = y.detach().numpy().reshape(h, w).T
+        img = np.stack([img,img,img], 2)
+        img = albu_transforms[self.mode](image=img)['image']
+        y = img[:,:,0].reshape(1, h, w)
 
         return {
             "image": y,
@@ -923,10 +920,12 @@ std = (0.229, 0.224, 0.225) # RGB
 albu_transforms = {
     'train' : A.Compose([
             A.OneOf([
-                A.Cutout(max_h_size=5, max_w_size=20),
+                A.Cutout(max_h_size=5, max_w_size=16),
                 A.CoarseDropout(max_holes=4),
                 A.RandomBrightness(p=0.25),
-            ], p=0.5)])
+            ], p=0.5)]),
+    'valid' : A.Compose([
+            ]),
 }
 
 audio_augmenter = Compose([
