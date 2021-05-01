@@ -307,12 +307,12 @@ class WaveformDataset(torchdata.Dataset):
         y = self.spectrogram_extractor(y)
         # batch_size x 1 x time_steps x freq_bins
         y = self.logmel_extractor(y)
-        b, s, h, w = y.size()
+        b, c, h, w = y.size()
 
-        img = y.detach().numpy().reshape(h, w).T
+        img = y.detach().numpy().reshape(h, w)
         img = np.stack([img,img,img], 2)
         img = albu_transforms[self.mode](image=img)['image']
-        y = img[:,:,0].reshape(1, w, h)
+        y = img[:,:,0].reshape(1, h, w)
 
         return {
             "image": y,
