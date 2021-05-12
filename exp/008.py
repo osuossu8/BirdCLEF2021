@@ -181,8 +181,8 @@ class CFG:
     pretrained = True
     # num_classes = 397
     num_classes = 398
-    # in_channels = 1
-    in_channels = 3
+    in_channels = 1
+    # in_channels = 3
 
     ######################
     # Criterion #
@@ -265,7 +265,8 @@ class WaveformDataset(torchdata.Dataset):
             # so we have tot get ***random*** 313 (5sec) for training
             len_image = image.shape[1]
             if len_image < 313:
-                new_image = np.zeros([128, 313, 3]) + image
+                padding = np.zeros([128, 313-len_image, 3])
+                new_image = np.concatenate([image, padding], 1)
             else:
                 rint = np.random.randint(156, len_image-157)
                 new_image = image[:,rint-156:rint+157,:] # (128, 313, 3)
@@ -282,6 +283,7 @@ class WaveformDataset(torchdata.Dataset):
             targets[CFG.target_columns.index(ebird_code)] = 1.0
 
         new_image = albu_transforms[self.mode](image=new_image)['image']
+        new_image = new_image[:,:,0].T[np.newaxis, :, :].astype(np.float32)
 
         return {
             "image": new_image,
@@ -894,11 +896,11 @@ albu_transforms = {
                 A.RandomBrightness(p=0.25),
             ], p=0.5),
             A.Normalize(mean, std),
-            T.ToTensorV2()
+            # T.ToTensorV2()
     ]),
     'valid' : A.Compose([
             A.Normalize(mean, std),
-            T.ToTensorV2()
+            # T.ToTensorV2()
     ]),
 }
 
