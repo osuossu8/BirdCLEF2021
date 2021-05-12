@@ -265,8 +265,7 @@ class WaveformDataset(torchdata.Dataset):
             # so we have tot get ***random*** 313 (5sec) for training
             len_image = image.shape[1]
             if len_image < 313:
-                padding = np.zeros([128, 313-len_image, 3])
-                new_image = np.concatenate([image, padding], 1)
+                new_image = image
             else:
                 rint = np.random.randint(156, len_image-157)
                 new_image = image[:,rint-156:rint+157,:] # (128, 313, 3)
@@ -281,6 +280,11 @@ class WaveformDataset(torchdata.Dataset):
         targets = np.zeros(len(CFG.target_columns), dtype=float)
         for ebird_code in labels.split():
             targets[CFG.target_columns.index(ebird_code)] = 1.0
+
+        len_new_image = new_image.shape[1]
+        if len_new_image < 313:
+            padding = np.zeros([128, 313-len_new_image, 3])
+            new_image = np.concatenate([new_image, padding], 1)
 
         new_image = albu_transforms[self.mode](image=new_image)['image']
         new_image = new_image[:,:,0].T[np.newaxis, :, :].astype(np.float32)
