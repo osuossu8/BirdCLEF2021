@@ -925,7 +925,7 @@ device = get_device()
 
 # data
 train = pd.read_csv('inputs/image_folds.csv')
-train['filepath'] = train['filepath'].map(lambda x: 'inputs/train_images' + '/'.join(x.split('/')[4:]))
+train['filepath'] = train['filepath'].map(lambda x: 'inputs/train_images/' + '/'.join(x.split('/')[4:]))
 
 # main loop
 for fold in range(5):
