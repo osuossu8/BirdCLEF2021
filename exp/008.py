@@ -267,7 +267,7 @@ class WaveformDataset(torchdata.Dataset):
             if len_image < 313:
                 new_image = image
             else:
-                rint = np.random.randint(157, len_image-157)
+                rint = np.random.randint(156, len_image-157)
                 new_image = image[:,rint-156:rint+157,:] # (128, 313, 3)
         else:    
             # here is for train sound scapes data zone (for training use)
