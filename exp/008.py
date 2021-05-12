@@ -893,7 +893,7 @@ albu_transforms = {
             A.OneOf([
                 A.Cutout(max_h_size=5, max_w_size=16),
                 A.CoarseDropout(max_holes=4),
-                A.RandomBrightness(p=0.25),
+                # A.RandomBrightness(p=0.25),
             ], p=0.5),
             A.Normalize(mean, std),
             # T.ToTensorV2()
