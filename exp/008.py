@@ -265,7 +265,7 @@ class WaveformDataset(torchdata.Dataset):
             # so we have tot get ***random*** 313 (5sec) for training
             len_image = image.shape[1]
             if len_image < 313:
-                new_image = image
+                new_image = np.zeros([128, 313, 3]) + image
             else:
                 rint = np.random.randint(156, len_image-157)
                 new_image = image[:,rint-156:rint+157,:] # (128, 313, 3)
