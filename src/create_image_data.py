@@ -157,8 +157,8 @@ def AtoI(path, params):
     
     melspec = compute_melspec(y, params)
     image = mono_to_color(melspec)
-    image = normalize(image, mean=None, std=None)
-    # image = image.astype(np.uint8)
+    # image = normalize(image, mean=None, std=None)
+    image = image.astype(np.uint8)
     return image
 
 def save_(path):
