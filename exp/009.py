@@ -50,7 +50,7 @@ class CFG:
     seed = 6718
     epochs = 60
     train = True
-    folds = [0, 1, 2, 3, 4]
+    folds = [0]
     img_size = 224
     main_metric = "epoch_f1_at_05"
     minimize_metric = False
@@ -279,7 +279,10 @@ class WaveformDataset(torchdata.Dataset):
 
         targets = np.zeros(len(CFG.target_columns), dtype=float)
         for ebird_code in labels.split():
-            targets[CFG.target_columns.index(ebird_code)] = 1.0
+            try:
+                targets[CFG.target_columns.index(ebird_code)] = 1.0
+            except:
+                pass
 
         len_new_image = new_image.shape[1]
         if len_new_image < 313:
@@ -933,11 +936,17 @@ device = get_device()
 # train = pd.read_csv('inputs/image_folds.csv')
 # train['filepath'] = train['filepath'].map(lambda x: 'inputs/train_images/' + '/'.join(x.split('/')[4:]))
 
-train = pd.read_csv('inputs/train_set_all_short_audio.csv')
-train['filepath'] = train['filepath'].map(lambda x: 'inputs/train_images/' + '/'.join(x.split('/')[4:]))
+short_audio = pd.read_csv('inputs/train_set_all_short_audio.csv')
+short_audio['filepath'] = short_audio['filepath'].map(lambda x: 'inputs/train_images/' + '/'.join(x.split('/')[4:]))
 
-valid = pd.read_csv('inputs/valid_set_train_soundscapes.csv')
-valid['filepath'] = valid['filepath'].map(lambda x: 'inputs/train_images/' + '/'.join(x.split('/')[4:]))
+long_audio = pd.read_csv('inputs/valid_set_train_soundscapes.csv')
+long_audio['filepath'] = long_audio['filepath'].map(lambda x: 'inputs/train_images/' + '/'.join(x.split('/')[4:]))
+
+long_nocall = long_audio[long_audio['primary_label'] == 'nocall']
+long_not_nocall = long_audio[long_audio['primary_label'] != 'nocall']
+
+trn_df = pd.concat([short_audio, long_nocall], 0).reset_index(drop=True)
+val_df = long_not_nocall.reset_index(drop=True)
 
 # main loop
 for fold in range(5):
@@ -957,8 +966,7 @@ for fold in range(5):
                 mode=phase
             ),
             **CFG.loader_params[phase])  # type: ignore
-        for phase, df_ in zip(["train", "valid"], [train, valid])
-        # for phase, df_ in zip(["train", "valid"], [trn_df, val_df])
+        for phase, df_ in zip(["train", "valid"], [trn_df, val_df])
     }
 
     model = TimmSED(
