@@ -929,7 +929,8 @@ for fold in range(5):
 
     for epoch in range(CFG.epochs):
 
-        logger.info("Starting {} epoch...".format(epoch+1))
+        #logger.info("Starting {} epoch...".format(epoch+1))
+        logger.info("Starting {} epoch...".format(epoch+41))
 
         start_time = time.time()
         
@@ -939,9 +940,12 @@ for fold in range(5):
         
         elapsed = time.time() - start_time
         
-        logger.info(f'Epoch {epoch+1} - avg_train_loss: {train_loss:.5f}  avg_val_loss: {valid_loss:.5f}  time: {elapsed:.0f}s')
-        logger.info(f"Epoch {epoch+1} - train_f1_at_03:{train_avg['f1_at_03']:0.5f}  valid_f1_at_03:{valid_avg['f1_at_03']:0.5f}")
-        logger.info(f"Epoch {epoch+1} - train_f1_at_05:{train_avg['f1_at_05']:0.5f}  valid_f1_at_05:{valid_avg['f1_at_05']:0.5f}")
+        #logger.info(f'Epoch {epoch+1} - avg_train_loss: {train_loss:.5f}  avg_val_loss: {valid_loss:.5f}  time: {elapsed:.0f}s')
+        #logger.info(f"Epoch {epoch+1} - train_f1_at_03:{train_avg['f1_at_03']:0.5f}  valid_f1_at_03:{valid_avg['f1_at_03']:0.5f}")
+        #logger.info(f"Epoch {epoch+1} - train_f1_at_05:{train_avg['f1_at_05']:0.5f}  valid_f1_at_05:{valid_avg['f1_at_05']:0.5f}")
+        logger.info(f'Epoch {epoch+41} - avg_train_loss: {train_loss:.5f}  avg_val_loss: {valid_loss:.5f}  time: {elapsed:.0f}s')
+        logger.info(f"Epoch {epoch+41} - train_f1_at_03:{train_avg['f1_at_03']:0.5f}  valid_f1_at_03:{valid_avg['f1_at_03']:0.5f}")
+        logger.info(f"Epoch {epoch+41} - train_f1_at_05:{train_avg['f1_at_05']:0.5f}  valid_f1_at_05:{valid_avg['f1_at_05']:0.5f}")
 
         if valid_avg['f1_at_03'] > best_score:
             logger.info(f">>>>>>>> Model Improved From {best_score} ----> {valid_avg['f1_at_03']}")
