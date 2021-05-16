@@ -147,8 +147,9 @@ class CFG:
         'whwdov', 'wilfly', 'willet1', 'wilsni1', 'wiltur', 'wlswar', 'wooduc',
         'woothr', 'wrenti', 'y00475', 'yebcha', 'yebela1', 'yebfly', 'yebori1',
         'yebsap', 'yebsee1', 'yefgra1', 'yegvir', 'yehbla', 'yehcar1', 'yelgro',
-        'yelwar', 'yeofly1', 'yerwar', 'yeteup1', 'yetvir'] \
-    + ['nocall']
+        'yelwar', 'yeofly1', 'yerwar', 'yeteup1', 'yetvir'] 
+    # \
+    # + ['nocall']
 
     ######################
     # Loaders #
@@ -182,8 +183,8 @@ class CFG:
     base_model_name = "tf_efficientnet_b0_ns"
     pooling = "max"
     pretrained = True
-    # num_classes = 397
-    num_classes = 398
+    num_classes = 397
+    # num_classes = 398
     in_channels = 1
     # in_channels = 3
 
@@ -881,6 +882,8 @@ train['filepath'] = train['filepath'].map(lambda x: 'inputs/train_images/' + '/'
 short_audio = train.loc[:62873].copy()
 long_audio = train.loc[62874:].copy()
 
+long_nocall = long_audio[long_audio['primary_label'] == 'nocall']
+long_not_nocall = long_audio[long_audio['primary_label'] != 'nocall']
 
 # main loop
 for fold in range(5):
@@ -893,7 +896,7 @@ for fold in range(5):
     trn_df = short_audio[short_audio.kfold != fold].reset_index(drop=True)
     val_df = short_audio[short_audio.kfold == fold].reset_index(drop=True)
 
-    trn_df = pd.concat([trn_df, long_audio]).reset_index(drop=True)
+    trn_df = pd.concat([trn_df, long_not_nocall]).reset_index(drop=True)
 
     loaders = {
         phase: torchdata.DataLoader(
