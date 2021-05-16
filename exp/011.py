@@ -215,7 +215,7 @@ class CFG:
 
     N_FOLDS = 5
     LR = 1e-3
-    PATIENCE = 5  
+    PATIENCE = 6
 
 
 def set_seed(seed=42):
@@ -798,11 +798,12 @@ def train_fn(model, data_loader, device, optimizer, scheduler):
         targets = data['targets'].to(device)
         outputs = model(inputs)
         loss = loss_fn(outputs, targets)
-        if CFG.apex:
-            with amp.scale_loss(loss, optimizer) as scaled_loss:
-                scaled_loss.backward()
-        else:
-            loss.backward()
+        # if CFG.apex:
+        #     with amp.scale_loss(loss, optimizer) as scaled_loss:
+        #         scaled_loss.backward()
+        # else:
+        #     loss.backward()
+        loss.backward()
         optimizer.step()
         scheduler.step()
         losses.update(loss.item(), inputs.size(0))
@@ -914,7 +915,7 @@ for fold in range(5):
     scheduler = torch.optim.lr_scheduler.CosineAnnealingWarmRestarts(optimizer, T_0=16, T_mult=1)
 
     model = model.to(device)
-    model, optimizer = amp.initialize(model, optimizer, opt_level='O1', verbosity=0)
+    # model, optimizer = amp.initialize(model, optimizer, opt_level='O1', verbosity=0)
 
     patience = CFG.PATIENCE
     p = 0
