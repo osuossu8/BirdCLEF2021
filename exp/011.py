@@ -921,7 +921,7 @@ for fold in range(5):
     model.load_state_dict(torch.load(OUTPUT_DIR+f'fold-{fold}.bin'))
     # model, optimizer = amp.initialize(model, optimizer, opt_level='O1', verbosity=0)
 
-    patience = CFG.PATIENCE
+    # patience = CFG.PATIENCE
     p = 0
     min_loss = 999
     best_score = -np.inf
