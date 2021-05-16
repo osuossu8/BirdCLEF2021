@@ -187,7 +187,8 @@ class CFG:
     ######################
     # Criterion #
     ######################
-    loss_name = "BCEFocal2WayLoss"
+    # loss_name = "BCEFocal2WayLoss"
+    loss_name = "BCEFocalLoss"
     loss_params: dict = {}
 
     ######################
