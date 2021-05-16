@@ -35,6 +35,8 @@ from torch.optim.optimizer import Optimizer
 from torchlibrosa.stft import LogmelFilterBank, Spectrogram
 from torchlibrosa.augmentation import SpecAugmentation
 
+from tqdm import tqdm
+
 import albumentations as A
 import albumentations.pytorch.transforms as T
 import audiomentations as AD
