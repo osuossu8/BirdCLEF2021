@@ -51,9 +51,9 @@ class CFG:
     # Globals #
     ######################
     seed = 6718
-    epochs = 60
+    epochs = 40 # 60 # 41-80
     train = True
-    folds = [0, 1, 2, 3, 4]
+    folds = [0]
     img_size = 224
     main_metric = "epoch_f1_at_03"
     minimize_metric = False
@@ -216,7 +216,7 @@ class CFG:
 
     N_FOLDS = 5
     LR = 1e-3
-    PATIENCE = 6
+    # PATIENCE = 6
 
 
 def set_seed(seed=42):
@@ -918,6 +918,7 @@ for fold in range(5):
     scheduler = torch.optim.lr_scheduler.CosineAnnealingWarmRestarts(optimizer, T_0=16, T_mult=1)
 
     model = model.to(device)
+    model.load_state_dict(torch.load(OUTPUT_DIR+f'fold-{fold}.bin'))
     # model, optimizer = amp.initialize(model, optimizer, opt_level='O1', verbosity=0)
 
     patience = CFG.PATIENCE
@@ -947,13 +948,13 @@ for fold in range(5):
             logger.info(f"other scores here... {valid_avg['f1_at_03']}, {valid_avg['f1_at_05']}")
             torch.save(model.state_dict(), OUTPUT_DIR+f'fold-{fold}.bin')
             best_score = valid_avg['f1_at_03']
-            p = 0 
+        #     p = 0 
 
-        if p > 0: 
-            logger.info(f'val loss is not updated while {p} epochs of training')
-        p += 1
-        if p > patience:
-            logger.info(f'Early Stopping')
-            break
+        # if p > 0: 
+        #     logger.info(f'val loss is not updated while {p} epochs of training')
+        # p += 1
+        # if p > patience:
+        #     logger.info(f'Early Stopping')
+        #     break
 
 
