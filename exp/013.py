@@ -182,40 +182,11 @@ class CFG:
     base_model_name = "tf_efficientnet_b0_ns"
     pooling = "max"
     pretrained = True
-    # num_classes = 397
     num_classes = 398
     in_channels = 1
-    # in_channels = 3
-
-    ######################
-    # Criterion #
-    ######################
-    # loss_name = "BCEFocal2WayLoss"
-    loss_name = "BCEFocalLoss"
-    loss_params: dict = {}
-
-    ######################
-    # Optimizer #
-    ######################
-    optimizer_name = "Adam"
-    base_optimizer = "Adam"
-    optimizer_params = {
-        "lr": 0.001
-    }
-    # For SAM optimizer
-    base_optimizer = "Adam"
-
-    ######################
-    # Scheduler #
-    ######################
-    scheduler_name = "CosineAnnealingLR"
-    scheduler_params = {
-        "T_max": 10
-    }
 
     N_FOLDS = 5
     LR = 1e-3
-    # PATIENCE = 6
 
 
 def set_seed(seed=42):
@@ -726,8 +697,8 @@ def cutmix(data, targets, alpha):
     # adjust lambda to exactly match pixel ratio
     lam = 1 - ((bbx2 - bbx1) * (bby2 - bby1) / (data.size()[-1] * data.size()[-2]))
 
-    targets = [targets, shuffled_targets, lam]
-    return data, targets
+    new_targets = [targets, shuffled_targets, lam]
+    return data, new_targets
 
 def mixup(data, targets, alpha):
     indices = torch.randperm(data.size(0))
@@ -735,25 +706,19 @@ def mixup(data, targets, alpha):
     shuffled_targets = targets[indices]
 
     lam = np.random.beta(alpha, alpha)
-    data = data * lam + shuffled_data * (1 - lam)
-    targets = [targets, shuffled_targets, lam]
+    new_data = data * lam + shuffled_data * (1 - lam)
+    new_targets = [targets, shuffled_targets, lam]
+    return new_data, new_targets
 
-    return data, targets
+def cutmix_criterion(preds, new_targets):
+    targets1, targets2, lam = new_targets[0], new_targets[1], new_targets[2]
+    criterion = BCEFocal2WayLoss()
+    return lam * criterion(preds, targets1) + (1 - lam) * criterion(preds, targets2)
 
-def cutmix_criterion(preds, targets):
-    targets1, targets2, lam = targets[0], targets[1], targets[2]
-    # criterion = nn.CrossEntropyLoss(reduction='mean')
-    # return lam * criterion(preds, targets1) + (1 - lam) * criterion(preds, targets2)
-    criterion = BCEFocalLoss()
-    return lam * criterion(preds['clipwise_output'], targets1) + (1 - lam) * criterion(preds['clipwise_output'], targets2)
-
-
-def mixup_criterion(preds, targets):
-    targets1, targets2, lam = targets[0], targets[1], targets[2]
-    # criterion = nn.CrossEntropyLoss(reduction='mean')
-    # return lam * criterion(preds, targets1) + (1 - lam) * criterion(preds, targets2)
-    criterion = BCEFocalLoss()
-    return lam * criterion(preds['clipwise_output'], targets1) + (1 - lam) * criterion(preds['clipwise_output'], targets2)
+def mixup_criterion(preds, new_targets):
+    targets1, targets2, lam = new_targets[0], new_targets[1], new_targets[2]
+    criterion = BCEFocal2WayLoss()
+    return lam * criterion(preds, targets1) + (1 - lam) * criterion(preds, targets2)
 
 
 # ====================================================
@@ -803,8 +768,6 @@ class MetricMeter(object):
     
         
 def loss_fn(logits, targets):
-    # loss_fct = nn.BCEWithLogitsLoss()
-    # loss_fct = BCEFocalLoss()
     loss_fct = BCEFocal2WayLoss()
     loss = loss_fct(logits, targets)
     return loss
@@ -848,18 +811,18 @@ def train_mixup_cutmix_fn(model, data_loader, device, optimizer, scheduler):
         targets = data['targets'].to(device)
 
         if np.random.rand()<0.5:
-            inputs, targets = mixup(inputs, targets, 0.4)
+            inputs, new_targets = mixup(inputs, targets, 0.4)
             outputs = model(inputs)
-            loss = mixup_criterion(outputs, targets) 
+            loss = mixup_criterion(outputs, new_targets) 
         else:
-            inputs, targets = cutmix(inputs, targets, 0.4)
+            inputs, new_targets = cutmix(inputs, targets, 0.4)
             outputs = model(inputs)
-            loss = cutmix_criterion(outputs, targets)
+            loss = cutmix_criterion(outputs, new_targets)
         loss.backward()
         optimizer.step()
         scheduler.step()
         losses.update(loss.item(), inputs.size(0))
-        scores.update(targets[0], outputs)
+        scores.update(new_targets[0], outputs)
         tk0.set_postfix(loss=losses.avg)
     return scores.avg, losses.avg
 
@@ -962,11 +925,9 @@ for fold in range(5):
     model = model.to(device)
     # model, optimizer = amp.initialize(model, optimizer, opt_level='O1', verbosity=0)
 
-    # patience = CFG.PATIENCE
     p = 0
     min_loss = 999
     best_score = -np.inf
-
 
     for epoch in range(CFG.epochs):
 
@@ -993,13 +954,4 @@ for fold in range(5):
             logger.info(f"other scores here... {valid_avg['f1_at_03']}, {valid_avg['f1_at_05']}")
             torch.save(model.state_dict(), OUTPUT_DIR+f'fold-{fold}.bin')
             best_score = valid_avg['f1_at_03']
-        #     p = 0 
-
-        # if p > 0: 
-        #     logger.info(f'val loss is not updated while {p} epochs of training')
-        # p += 1
-        # if p > patience:
-        #     logger.info(f'Early Stopping')
-        #     break
-
 
