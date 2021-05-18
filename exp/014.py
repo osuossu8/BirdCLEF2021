@@ -179,7 +179,7 @@ class CFG:
     ######################
     # Model #
     ######################
-    base_model_name = "tf_efficientnetv2_b0" # "tf_efficientnet_b0_ns"
+    base_model_name = "tf_efficientnet_b1_ns" # "tf_efficientnet_b0_ns"
     pooling = "max"
     pretrained = True
     num_classes = 398
