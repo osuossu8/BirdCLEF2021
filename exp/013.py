@@ -51,7 +51,7 @@ class CFG:
     # Globals #
     ######################
     seed = 6718
-    epochs = 120 # 60
+    epochs = 103 # 120 # 60
     train = True
     folds = [1]
     img_size = 224
