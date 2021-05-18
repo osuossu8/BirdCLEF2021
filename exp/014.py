@@ -553,7 +553,8 @@ class TimmSED(nn.Module):
         self.spec_augmenter = SpecAugmentation(time_drop_width=64//2, time_stripes_num=2,
                                                freq_drop_width=8//2, freq_stripes_num=2)
 
-        self.bn0 = nn.BatchNorm2d(CFG.n_mels)
+        # self.bn0 = nn.BatchNorm2d(CFG.n_mels)
+        self.bn0 = nn.BatchNorm2d(CFG.img_size)
 
         base_model = timm.create_model(
             base_model_name, pretrained=pretrained, in_chans=in_channels)
@@ -852,17 +853,20 @@ std = (0.229, 0.224, 0.225) # RGB
 albu_transforms = {
     'train' : A.Compose([
             A.OneOf([
-                A.RandomResizedCrop(CFG.img_size, CFG.img_size),
-                A.HorizontalFlip(p=0.5),
+                A.RandomResizedCrop(CFG.img_size, CFG.img_size, p=0.5),
+                A.Resize(CFG.img_size, CFG.img_size, p=0.5),
+            ], p=1.0),
+            A.HorizontalFlip(p=0.5),
+            A.OneOf([
                 A.Cutout(max_h_size=10, max_w_size=32),
                 A.CoarseDropout(max_holes=4),
-                # A.RandomBrightness(p=0.25),
             ], p=0.5),
+            # A.RandomBrightness(p=0.25),
             A.Normalize(mean, std),
             # T.ToTensorV2()
     ]),
     'valid' : A.Compose([
-            A.Resize(CFG.img_size, CFG.img_size),
+            A.Resize(CFG.img_size, CFG.img_size, p=1.0),
             A.Normalize(mean, std),
             # T.ToTensorV2()
     ]),
