@@ -921,7 +921,7 @@ for fold in range(5):
 
     trn_df = pd.concat([train_fold_p, train_fold_s, train_fold_m]).reset_index(drop=True)
     logger.info(trn_df.shape)
-    logger.info(trn_df.nunique())
+    logger.info(trn_df['primary_label'].nunique())
 
     loaders = {
         phase: torchdata.DataLoader(
@@ -955,7 +955,7 @@ for fold in range(5):
 
         start_time = time.time()
 
-        if epoch < cutmix_and_mixup_epochs:
+        if epoch < CFG.cutmix_and_mixup_epochs:
             train_avg, train_loss = train_mixup_cutmix_fn(model, loaders['train'], device, optimizer, scheduler)
         else: 
             train_avg, train_loss = train_fn(model, loaders['train'], device, optimizer, scheduler)
