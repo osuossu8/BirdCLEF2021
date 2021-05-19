@@ -156,12 +156,12 @@ class CFG:
     ######################
     loader_params = {
         "train": {
-            "batch_size": 64, 
+            "batch_size": 64*2, 
             "num_workers": 0,
             "shuffle": True
         },
         "valid": {
-            "batch_size": 128,
+            "batch_size": 128*2,
             "num_workers": 0,
             "shuffle": False
         }
@@ -909,7 +909,7 @@ for fold in range(5):
     val_df = train[train.kfold == fold].reset_index(drop=True)
 
     train_fold = new_train[new_train['kfold']!=fold].reset_index(drop=True)
-    train_fold_p = train_fold.query('primary_label == pred and secondary_labels == pred')
+    train_fold_p = train_fold.query('primary_label == pred')
     del train_fold_p['secondary_labels'], train_fold_p['rating'], train_fold_p['pred']
 
     train_fold_s = train_fold.query('primary_label != pred and secondary_labels == pred and rating>4')
