@@ -53,7 +53,7 @@ class CFG:
     ######################
     seed = 6718
     epochs = 100
-    cutmix_and_mixup_epochs = 90
+    cutmix_and_mixup_epochs = 95
     train = True
     folds = [1]
     img_size = 224
@@ -190,6 +190,7 @@ class CFG:
 
     N_FOLDS = 5
     LR = 1e-3
+    apex = True
 
 
 def set_seed(seed=42):
@@ -824,7 +825,13 @@ def train_mixup_cutmix_fn(model, data_loader, device, optimizer, scheduler):
             inputs, new_targets = cutmix(inputs, targets, 0.4)
             outputs = model(inputs)
             loss = cutmix_criterion(outputs, new_targets)
-        loss.backward()
+
+        if CFG.apex:
+            with amp.scale_loss(loss, optimizer) as scaled_loss:
+                scaled_loss.backward()
+        else:
+            loss.backward()
+        # loss.backward()
         optimizer.step()
         scheduler.step()
         losses.update(loss.item(), inputs.size(0))
@@ -925,9 +932,9 @@ for fold in range(5):
     # val_df = train[train.kfold == fold].reset_index(drop=True)
 
     trn_df = new_train[new_train['kfold']!=fold].query('rating != 0').reset_index(drop=True)
-    #trn_df['secondary_labels'] = trn_df['secondary_labels'].map(lambda x: ' '.join(ast.literal_eval(x)))
-    #trn_df['primary_label'] = trn_df['primary_label'] + ' ' + trn_df['secondary_labels']
-    #trn_df['len_label'] = trn_df['primary_label'].map(lambda x: len(x.split()))
+    # trn_df['secondary_labels'] = trn_df['secondary_labels'].map(lambda x: ' '.join(ast.literal_eval(x)))
+    # trn_df['primary_label'] = trn_df['primary_label'] + ' ' + trn_df['secondary_labels']
+    # trn_df['len_label'] = trn_df['primary_label'].map(lambda x: len(x.split()))
     print(trn_df.shape)
 
     val_df = new_train[new_train.kfold == fold].reset_index(drop=True)
