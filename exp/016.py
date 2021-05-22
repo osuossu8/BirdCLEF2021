@@ -8,6 +8,7 @@ import sys
 sys.path.append("/root/workspace/BirdCLEF2021")
 
 import albumentations as A
+import ast
 import cv2
 import librosa
 import numpy as np
@@ -894,6 +895,21 @@ device = get_device()
 train = pd.read_csv('inputs/image_folds.csv')
 train['filepath'] = train['filepath'].map(lambda x: 'inputs/train_images/' + '/'.join(x.split('/')[4:]))
 
+short_audio = train.loc[:62873].copy()
+long_audio = train.loc[62874:].copy()
+
+meta = pd.read_csv('inputs/train_metadata.csv')
+
+short_audio['secondary_labels'] = meta['secondary_labels'].copy()
+long_audio['secondary_labels'] = '[]'
+
+short_audio['rating'] = meta['rating'].copy()
+long_audio['rating'] = -1
+
+new_train = pd.concat([short_audio, long_audio]).reset_index(drop=True)
+
+
+
 # main loop
 for fold in range(5):
     if fold not in CFG.folds:
@@ -902,8 +918,16 @@ for fold in range(5):
     logger.info(f"Fold {fold} Training")
     logger.info("=" * 120)
 
-    trn_df = train[train.kfold != fold].reset_index(drop=True)
-    val_df = train[train.kfold == fold].reset_index(drop=True)
+    # trn_df = train[train.kfold != fold].reset_index(drop=True)
+    # val_df = train[train.kfold == fold].reset_index(drop=True)
+
+    trn_df = new_train[new_train['kfold']!=fold].query('rating != 0').reset_index(drop=True)
+    trn_df['primary_label'] = trn_df['primary_label'] + ' ' + trn_df['secondary_labels']
+    trn_df['len_label'] = trn_df['primary_label'].map(lambda x: len(x.split()))
+    print(trn_df.shape)
+
+    val_df = new_train[new_train.kfold == fold].reset_index(drop=True)
+    print(val_df.shape)
 
     loaders = {
         phase: torchdata.DataLoader(
