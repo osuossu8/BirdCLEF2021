@@ -925,9 +925,9 @@ for fold in range(5):
     # val_df = train[train.kfold == fold].reset_index(drop=True)
 
     trn_df = new_train[new_train['kfold']!=fold].query('rating != 0').reset_index(drop=True)
-    trn_df['secondary_labels'] = trn_df['secondary_labels'].map(lambda x: ' '.join(ast.literal_eval(x)))
-    trn_df['primary_label'] = trn_df['primary_label'] + ' ' + trn_df['secondary_labels']
-    trn_df['len_label'] = trn_df['primary_label'].map(lambda x: len(x.split()))
+    #trn_df['secondary_labels'] = trn_df['secondary_labels'].map(lambda x: ' '.join(ast.literal_eval(x)))
+    #trn_df['primary_label'] = trn_df['primary_label'] + ' ' + trn_df['secondary_labels']
+    #trn_df['len_label'] = trn_df['primary_label'].map(lambda x: len(x.split()))
     print(trn_df.shape)
 
     val_df = new_train[new_train.kfold == fold].reset_index(drop=True)
