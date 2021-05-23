@@ -31,6 +31,7 @@ from catalyst.core import Callback, CallbackOrder, IRunner
 from catalyst.dl import Runner, SupervisedRunner
 from sklearn import model_selection
 from sklearn import metrics
+from sklearn.model_selection import KFold, train_test_split, GroupKFold, StratifiedKFold
 from timm.models.layers import SelectAdaptivePool2d
 from torch.optim.optimizer import Optimizer
 from torchlibrosa.stft import LogmelFilterBank, Spectrogram
@@ -189,7 +190,7 @@ class CFG:
     num_classes = 397
     in_channels = 3
 
-    N_FOLDS = 5
+    N_FOLDS = 4
     LR = 1e-3
     apex = True
 
@@ -938,8 +939,21 @@ long_audio['rating'] = -1
 # new_train = pd.concat([short_audio, long_audio]).reset_index(drop=True)
 
 
+del short_audio['kfold']
+
+short_audio['kfold'] = -1
+y = short_audio['primary_label'].values
+
+kf = StratifiedKFold(n_splits=CFG.N_FOLDS, shuffle=True, random_state=6718)
+
+for fold_id, (trn_idx, val_idx) in enumerate(kf.split(short_audio, y)):    
+    short_audio.loc[val_idx, 'kfold'] = fold_id
+    
+short_audio['kfold'] = short_audio['kfold'].astype(int)
+
+
 # main loop
-for fold in range(5):
+for fold in range(CFG.N_FOLDS):
     if fold not in CFG.folds:
         continue
     logger.info("=" * 120)
