@@ -617,7 +617,7 @@ class ClassificationModel(nn.Module):
         clipwise_output = self.classifier(x)
 
         output_dict = {
-            "clipwise_output": clipwise_output
+            "clipwise_output": torch.sigmoid(clipwise_output)
         }
 
         return output_dict
@@ -659,6 +659,39 @@ class BCEFocal2WayLoss(nn.Module):
         aux_loss = self.focal(clipwise_output_with_max, target)
 
         return self.weights[0] * loss + self.weights[1] * aux_loss
+
+
+def lsep_loss(input, target, average=True):
+
+    differences = input.unsqueeze(1) - input.unsqueeze(2)
+    where_different = (target.unsqueeze(1) < target.unsqueeze(2)).float()
+
+    exps = differences.exp() * where_different
+    lsep = torch.log(1 + exps.sum(2).sum(1))
+
+    if average:
+        return lsep.mean()
+    else:
+        return lsep
+
+
+class LSEPLoss(nn.Module):
+    def __init__(self):
+        super().__init__()
+
+    def forward(self, input, target):
+        input_ = input["clipwise_output"]
+        # input_ = input["logit"]
+        input_ = torch.where(torch.isnan(input_),
+                             torch.zeros_like(input_),
+                             input_)
+        input_ = torch.where(torch.isinf(input_),
+                             torch.zeros_like(input_),
+                             input_)
+
+        target = target.float()
+
+        return lsep_loss(input_, target)
 
 
 def rand_bbox(size, lam):
@@ -707,14 +740,16 @@ def cutmix_criterion(preds, new_targets):
     targets1, targets2, lam = new_targets[0], new_targets[1], new_targets[2]
     # criterion = BCEFocal2WayLoss()
     # return lam * criterion(preds, targets1) + (1 - lam) * criterion(preds, targets2)
-    criterion = nn.BCEWithLogitsLoss()
+    # criterion = nn.BCEWithLogitsLoss()
+    criterion = LSEPLoss()
     return lam * criterion(preds['clipwise_output'], targets1) + (1 - lam) * criterion(preds['clipwise_output'], targets2)
 
 def mixup_criterion(preds, new_targets):
     targets1, targets2, lam = new_targets[0], new_targets[1], new_targets[2]
     # criterion = BCEFocal2WayLoss()
     # return lam * criterion(preds, targets1) + (1 - lam) * criterion(preds, targets2)
-    criterion = nn.BCEWithLogitsLoss()
+    # criterion = nn.BCEWithLogitsLoss()
+    criterion = LSEPLoss()
     return lam * criterion(preds['clipwise_output'], targets1) + (1 - lam) * criterion(preds['clipwise_output'], targets2)
 
 
@@ -766,7 +801,8 @@ class MetricMeter(object):
         
 def loss_fn(logits, targets):
     # loss_fct = BCEFocal2WayLoss()
-    loss_fct = nn.BCEWithLogitsLoss()
+    # loss_fct = nn.BCEWithLogitsLoss()
+    loss_fct = LSEPLoss()
     loss = loss_fct(logits['clipwise_output'], targets)
     return loss
         
