@@ -604,8 +604,8 @@ class TimmSED(nn.Module):
         x = self.bn0(x)
         x = x.transpose(1, 3)
 
-        if self.training:
-            x = self.spec_augmenter(x)
+        # if self.training:
+        #     x = self.spec_augmenter(x)
 
         x = x.transpose(2, 3)
         # (batch_size, channels, freq, frames)
@@ -1013,6 +1013,8 @@ for fold in range(CFG.N_FOLDS):
             train_avg, train_loss = train_mixup_cutmix_fn(model, loaders['train'], device, optimizer, scheduler)
         else: 
             train_avg, train_loss = train_fn(model, loaders['train'], device, optimizer, scheduler)
+
+        # train_avg, train_loss = train_fn(model, loaders['train'], device, optimizer, scheduler)
 
         valid_avg, valid_loss = valid_fn(model, loaders['valid'], device)
         scheduler.step()
