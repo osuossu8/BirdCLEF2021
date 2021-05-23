@@ -75,7 +75,7 @@ class CFG:
         "valid": [{"name": "Normalize"}]
     }
     period = 5
-    n_mels = 313 # 128
+    n_mels = 128 # 313 # 128
     fmin = 20
     fmax = 16000
     n_fft = 2048
@@ -243,7 +243,7 @@ class WaveformDataset(torchdata.Dataset):
         secondary_labels = sample["secondary_labels"]
         rating = sample["rating"]
 
-        image = np.load(wav_path).astype(np.uint8) # (313, XXX, 3)
+        image = np.load(wav_path).astype(np.uint8) # (128, XXX, 3)
 
         if start_sec == -1:
             # here is for clips per birds zone
@@ -570,8 +570,8 @@ class TimmSED(nn.Module):
     def __init__(self, base_model_name: str, pretrained=False, num_classes=24, in_channels=1):
         super().__init__()
         # Spec augmenter
-        self.spec_augmenter = SpecAugmentation(time_drop_width=64, time_stripes_num=2,
-                                               freq_drop_width=8, freq_stripes_num=2)
+        self.spec_augmenter = SpecAugmentation(time_drop_width=64//4, time_stripes_num=2,
+                                               freq_drop_width=8//4, freq_stripes_num=2)
 
         self.bn0 = nn.BatchNorm2d(CFG.n_mels)
 
@@ -685,50 +685,6 @@ class BCEFocal2WayLoss(nn.Module):
         aux_loss = self.focal(clipwise_output_with_max, target)
 
         return self.weights[0] * loss + self.weights[1] * aux_loss
-
-
-class SedScaledPosNegFocalLoss(nn.Module):
-    def __init__(self, gamma=0.0, alpha_1=1.0, alpha_0=1.0, secondary_factor=1.0):
-        super().__init__()
-
-        self.loss_fn = nn.BCELoss(reduction='none')
-        self.secondary_factor = secondary_factor
-        self.gamma = gamma
-        self.alpha_1 = alpha_1
-        self.alpha_0 = alpha_0
-        self.loss_keys = ["bce_loss", "F_loss", "FScaled_loss", "F_loss_0", "F_loss_1"]
-
-    def forward(self, y_pred, y_target):
-        y_true = y_target["primary_label"]
-        y_sec_true = y_target["secondary_labels"]
-        bs, s, o = y_true.shape
-
-        y_pred = torch.sigmoid(y_pred)
-
-        # Sigmoid has already been applied in the model
-        y_pred = torch.clamp(y_pred, min=EPSILON_FP16, max=1.0-EPSILON_FP16)
-        y_pred = y_pred.reshape(bs*s,o)
-        y_true = y_true.reshape(bs*s,o)
-        y_sec_true = y_sec_true.reshape(bs*s,o)
-
-        with torch.no_grad():
-            y_all_ones_mask = torch.ones_like(y_true, requires_grad=False)
-            y_all_zeros_mask = torch.zeros_like(y_true, requires_grad=False)
-            y_all_mask = torch.where(y_true > 0.0, y_all_ones_mask, y_all_zeros_mask)
-            y_ones_mask = torch.ones_like(y_sec_true, requires_grad=False)
-            y_zeros_mask = torch.ones_like(y_sec_true, requires_grad=False) *self.secondary_factor
-            y_secondary_mask = torch.where(y_sec_true > 0.0, y_zeros_mask, y_ones_mask)
-        bce_loss = self.loss_fn(y_pred, y_true)
-        pt = torch.exp(-bce_loss)
-        F_loss_0 = (self.alpha_0*(1-y_all_mask)) * (1-pt)**self.gamma * bce_loss
-        F_loss_1 = (self.alpha_1*y_all_mask) * (1-pt)**self.gamma * bce_loss
-
-        F_loss = F_loss_0 + F_loss_1
-
-        FScaled_loss = y_secondary_mask*F_loss
-        FScaled_loss = FScaled_loss.mean()
-
-        return FScaled_loss
 
 
 def rand_bbox(size, lam):
