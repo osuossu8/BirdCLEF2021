@@ -150,8 +150,8 @@ class CFG:
         'whwdov', 'wilfly', 'willet1', 'wilsni1', 'wiltur', 'wlswar', 'wooduc',
         'woothr', 'wrenti', 'y00475', 'yebcha', 'yebela1', 'yebfly', 'yebori1',
         'yebsap', 'yebsee1', 'yefgra1', 'yegvir', 'yehbla', 'yehcar1', 'yelgro',
-        'yelwar', 'yeofly1', 'yerwar', 'yeteup1', 'yetvir'] # \
-    # + ['nocall']
+        'yelwar', 'yeofly1', 'yerwar', 'yeteup1', 'yetvir'] \
+    + ['nocall']
 
     ######################
     # Loaders #
@@ -185,13 +185,13 @@ class CFG:
     base_model_name = "tf_efficientnet_b3_ns" # "tf_efficientnet_b0_ns"
     pooling = "max"
     pretrained = True
-    # num_classes = 398
+    num_classes = 398
     # in_channels = 1
-    num_classes = 397
+    # num_classes = 397
     in_channels = 3
 
-    N_FOLDS = 4
-    LR = 1e-3
+    N_FOLDS = 5
+    LR = 2e-4 # 1e-3
     apex = True
 
 
@@ -571,8 +571,8 @@ class TimmSED(nn.Module):
     def __init__(self, base_model_name: str, pretrained=False, num_classes=24, in_channels=1):
         super().__init__()
         # Spec augmenter
-        self.spec_augmenter = SpecAugmentation(time_drop_width=64//4, time_stripes_num=2,
-                                               freq_drop_width=8//4, freq_stripes_num=2)
+        self.spec_augmenter = SpecAugmentation(time_drop_width=64, time_stripes_num=2,
+                                               freq_drop_width=8, freq_stripes_num=2)
 
         self.bn0 = nn.BatchNorm2d(CFG.n_mels)
 
@@ -604,8 +604,8 @@ class TimmSED(nn.Module):
         x = self.bn0(x)
         x = x.transpose(1, 3)
 
-        # if self.training:
-        #     x = self.spec_augmenter(x)
+        if self.training:
+            x = self.spec_augmenter(x)
 
         x = x.transpose(2, 3)
         # (batch_size, channels, freq, frames)
@@ -934,22 +934,9 @@ short_audio['secondary_labels'] = meta['secondary_labels'].copy()
 long_audio['secondary_labels'] = '[]'
 
 short_audio['rating'] = meta['rating'].copy()
-long_audio['rating'] = -1
+long_audio['rating'] = 999 # -1
 
-# new_train = pd.concat([short_audio, long_audio]).reset_index(drop=True)
-
-
-del short_audio['kfold']
-
-short_audio['kfold'] = -1
-y = short_audio['primary_label'].values
-
-kf = StratifiedKFold(n_splits=CFG.N_FOLDS, shuffle=True, random_state=6718)
-
-for fold_id, (trn_idx, val_idx) in enumerate(kf.split(short_audio, y)):    
-    short_audio.loc[val_idx, 'kfold'] = fold_id
-    
-short_audio['kfold'] = short_audio['kfold'].astype(int)
+new_train = pd.concat([short_audio, long_audio]).reset_index(drop=True)
 
 
 # main loop
@@ -960,8 +947,9 @@ for fold in range(CFG.N_FOLDS):
     logger.info(f"Fold {fold} Training")
     logger.info("=" * 120)
 
-    trn_df = short_audio[short_audio['kfold']!=fold].reset_index(drop=True)
+    # trn_df = short_audio[short_audio['kfold']!=fold].reset_index(drop=True)
     # trn_df = new_train[new_train['kfold']!=fold].query('rating != 0').reset_index(drop=True)
+    trn_df = new_train[new_train['kfold']!=fold].query('rating > 1.5').reset_index(drop=True)
     trn_df['secondary_labels'] = trn_df['secondary_labels'].map(lambda x: ' '.join(ast.literal_eval(x)))
 
     print(trn_df['primary_label'].nunique())
@@ -970,8 +958,8 @@ for fold in range(CFG.N_FOLDS):
     print(trn_df['secondary_labels'].value_counts())
     print(trn_df.shape)
 
-    val_df = short_audio[short_audio.kfold == fold].reset_index(drop=True)
-    # val_df = new_train[new_train.kfold == fold].reset_index(drop=True)
+    # val_df = short_audio[short_audio.kfold == fold].reset_index(drop=True)
+    val_df = new_train[new_train.kfold == fold].reset_index(drop=True)
     print(val_df.shape)
 
     # trn_df = trn_df.head(256)
