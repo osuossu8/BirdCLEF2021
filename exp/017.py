@@ -269,10 +269,9 @@ class WaveformDataset(torchdata.Dataset):
  
         secondary_targets = np.zeros(len(CFG.target_columns), dtype=float)
         for ebird_code in secondary_labels.split():
-            try:
-                secondary_targets[CFG.target_columns.index(ebird_code)] = 1.0
-            except:
-                pass
+            if ebird_code == 'rocpig1':
+                ebird_code = 'rocpig'
+            secondary_targets[CFG.target_columns.index(ebird_code)] = 1.0
 
         len_new_image = new_image.shape[1]
         if len_new_image < 313:
