@@ -819,11 +819,11 @@ class MetricMeter(object):
 
     @property
     def avg(self):
-        # self.f1_03 = metrics.f1_score(np.array(self.y_true), np.array(self.y_pred) > 0.3, average="samples")
-        # self.f1_05 = metrics.f1_score(np.array(self.y_true), np.array(self.y_pred) > 0.5, average="samples")
+        self.f1_03 = metrics.f1_score(np.array(self.y_true), np.array(self.y_pred) > 0.3, average="samples")
+        self.f1_05 = metrics.f1_score(np.array(self.y_true), np.array(self.y_pred) > 0.5, average="samples")
         
-        self.f1_03 = metrics.f1_score(np.array(self.y_true) > 0.3, np.array(self.y_pred) > 0.3, average="samples")
-        self.f1_05 = metrics.f1_score(np.array(self.y_true) > 0.5, np.array(self.y_pred) > 0.5, average="samples")
+        # self.f1_03 = metrics.f1_score(np.array(self.y_true) > 0.3, np.array(self.y_pred) > 0.3, average="samples")
+        # self.f1_05 = metrics.f1_score(np.array(self.y_true) > 0.5, np.array(self.y_pred) > 0.5, average="samples")
         return {
             "f1_at_03" : self.f1_03,
             "f1_at_05" : self.f1_05,
