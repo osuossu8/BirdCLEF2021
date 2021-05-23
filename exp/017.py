@@ -75,7 +75,7 @@ class CFG:
         "valid": [{"name": "Normalize"}]
     }
     period = 5
-    n_mels = 128
+    n_mels = 313 # 128
     fmin = 20
     fmax = 16000
     n_fft = 2048
@@ -240,8 +240,9 @@ class WaveformDataset(torchdata.Dataset):
         end_sec = sample["end_seconds"]
         len_label = sample["len_label"]
         labels = sample["primary_label"]
+        secondary_labels = sample["secondary_labels"]
 
-        image = np.load(wav_path).astype(np.uint8) # (128, XXX, 3)
+        image = np.load(wav_path).astype(np.uint8) # (313, XXX, 3)
 
         if start_sec == -1:
             # here is for clips per birds zone
@@ -267,6 +268,12 @@ class WaveformDataset(torchdata.Dataset):
                 targets[CFG.target_columns.index(ebird_code)] = 1.0
             except:
                 pass
+ 
+       for ebird_code in secondary_labels.split():
+            try:
+                targets[CFG.target_columns.index(ebird_code)] = 0.7
+            except:
+                pass
 
         len_new_image = new_image.shape[1]
         if len_new_image < 313:
@@ -274,7 +281,6 @@ class WaveformDataset(torchdata.Dataset):
             new_image = np.concatenate([new_image, padding], 1)
 
         new_image = albu_transforms[self.mode](image=new_image)['image'].T.astype(np.float32)
-        # new_image = new_image[:,:,0].T[np.newaxis, :, :].astype(np.float32)
 
         return {
             "image": new_image,
@@ -941,8 +947,11 @@ for fold in range(5):
     # trn_df['len_label'] = trn_df['primary_label'].map(lambda x: len(x.split()))
 
     trn_df = short_audio[short_audio.kfold != fold].reset_index(drop=True)
+    trn_df['secondary_labels'] = trn_df['secondary_labels'].map(lambda x: ' '.join(ast.literal_eval(x)))
     print(trn_df['primary_label'].nunique())
     print(trn_df['primary_label'].value_counts())
+    print(trn_df['secondary_labels'].nunique())
+    print(trn_df['secondary_labels'].value_counts())
     print(trn_df.shape)
 
     # val_df = new_train[new_train.kfold == fold].reset_index(drop=True)
