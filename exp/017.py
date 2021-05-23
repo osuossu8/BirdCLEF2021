@@ -742,10 +742,11 @@ def rand_bbox(size, lam):
 
     return bbx1, bby1, bbx2, bby2
 
-def cutmix(data, targets, alpha):
+def cutmix(data, targets, secondary_targets, alpha):
     indices = torch.randperm(data.size(0))
     shuffled_data = data[indices]
     shuffled_targets = targets[indices]
+    shuffled_secondary_targets = secondary_targets[indices]
 
     lam = np.random.beta(alpha, alpha)
     bbx1, bby1, bbx2, bby2 = rand_bbox(data.size(), lam)
@@ -753,30 +754,31 @@ def cutmix(data, targets, alpha):
     # adjust lambda to exactly match pixel ratio
     lam = 1 - ((bbx2 - bbx1) * (bby2 - bby1) / (data.size()[-1] * data.size()[-2]))
 
-    new_targets = [targets, shuffled_targets, lam]
+    new_targets = [targets, shuffled_targets, secondary_targets, shuffled_secondary_targets, lam]
     return data, new_targets
 
-def mixup(data, targets, alpha):
+def mixup(data, targets, secondary_targets, alpha):
     indices = torch.randperm(data.size(0))
     shuffled_data = data[indices]
     shuffled_targets = targets[indices]
+    shuffled_secondary_targets = secondary_targets[indices]
 
     lam = np.random.beta(alpha, alpha)
     new_data = data * lam + shuffled_data * (1 - lam)
-    new_targets = [targets, shuffled_targets, lam]
+    new_targets = [targets, shuffled_targets, secondary_targets, shuffled_secondary_targets, lam]
     return new_data, new_targets
 
 def cutmix_criterion(preds, new_targets):
-    targets1, targets2, lam = new_targets[0], new_targets[1], new_targets[2]
+    targets1, targets2, secondary_targets1, secondary_targets2, lam = new_targets[0], new_targets[1], new_targets[2], new_targets[3], new_targets[4]
     criterion = BCEFocal2WayLoss()
-    return lam * criterion(preds, targets1) + (1 - lam) * criterion(preds, targets2)
+    return lam * criterion(preds, targets1) + (1 - lam) * criterion(preds, targets2) + lam * criterion(preds, secondary_targets1) + (1 - lam) * criterion(preds, secondary_targets2)
     # criterion = nn.BCEWithLogitsLoss()
     # return lam * criterion(preds['clipwise_output'], targets1) + (1 - lam) * criterion(preds['clipwise_output'], targets2)
 
 def mixup_criterion(preds, new_targets):
-    targets1, targets2, lam = new_targets[0], new_targets[1], new_targets[2]
+    targets1, targets2, secondary_targets1, secondary_targets2, lam = new_targets[0], new_targets[1], new_targets[2], new_targets[3], new_targets[4]
     criterion = BCEFocal2WayLoss()
-    return lam * criterion(preds, targets1) + (1 - lam) * criterion(preds, targets2)
+    return lam * criterion(preds, targets1) + (1 - lam) * criterion(preds, targets2) + lam * criterion(preds, secondary_targets1) + (1 - lam) * criterion(preds, secondary_targets2)
     # criterion = nn.BCEWithLogitsLoss()
     # return lam * criterion(preds['clipwise_output'], targets1) + (1 - lam) * criterion(preds['clipwise_output'], targets2)
 
@@ -876,13 +878,13 @@ def train_mixup_cutmix_fn(model, data_loader, device, optimizer, scheduler):
         secondary_targets = data['secondary_targets'].to(device)
 
         if np.random.rand()<0.5:
-            inputs, new_targets = mixup(inputs, targets, 0.4)
+            inputs, new_targets = mixup(inputs, targets, secondary_targets, 0.4)
             outputs = model(inputs)
-            loss = mixup_criterion(outputs, new_targets) * 0.7 + mixup_criterion(outputs, secondary_targets) * 0.3
+            loss = mixup_criterion(outputs, new_targets)
         else:
-            inputs, new_targets = cutmix(inputs, targets, 0.4)
+            inputs, new_targets = cutmix(inputs, targets, secondary_targets, 0.4)
             outputs = model(inputs)
-            loss = cutmix_criterion(outputs, new_targets) * 0.7 + cutmix_criterion(outputs, secondary_targets) * 0.3
+            loss = cutmix_criterion(outputs, new_targets)
 
         if CFG.apex:
             with amp.scale_loss(loss, optimizer) as scaled_loss:
