@@ -554,12 +554,7 @@ class AttBlockV2(nn.Module):
             return torch.sigmoid(x)
 
 
-class Flatten(nn.Module):
-    def forward(self, input):
-        return input.view(input.size(0), -1)
-
-
-class ClassificationModel(nn.Module):
+class TimmSED(nn.Module):
     def __init__(self, base_model_name: str, pretrained=False, num_classes=24, in_channels=1):
         super().__init__()
         # Spec augmenter
@@ -577,22 +572,14 @@ class ClassificationModel(nn.Module):
             in_features = base_model.fc.in_features
         else:
             in_features = base_model.classifier.in_features
-
-        self.pooling = GeM()
-        self.flatten = Flatten()
-        self.classifier = nn.Sequential(
-                nn.BatchNorm1d(in_features),
-                nn.Linear(in_features, in_features//2),
-                nn.BatchNorm1d(in_features//2),
-                nn.PReLU(in_features//2),
-                nn.Dropout(p=0.5),
-                nn.Linear(in_features//2, num_classes)
-            )
+        self.fc1 = nn.Linear(in_features, in_features, bias=True)
+        self.att_block = AttBlockV2(
+            in_features, num_classes, activation="sigmoid")
 
         self.init_weight()
 
     def init_weight(self):
-        # init_layer(self.fc1)
+        init_layer(self.fc1)
         init_bn(self.bn0)
 
     def forward(self, input):
@@ -611,13 +598,40 @@ class ClassificationModel(nn.Module):
         # (batch_size, channels, freq, frames)
         x = self.encoder(x)
 
-        x = self.pooling(x)      
-        x = self.flatten(x)
-        
-        clipwise_output = self.classifier(x)
+        # (batch_size, channels, frames)
+        x = torch.mean(x, dim=2)
+
+        # channel smoothing
+        x1 = F.max_pool1d(x, kernel_size=3, stride=1, padding=1)
+        x2 = F.avg_pool1d(x, kernel_size=3, stride=1, padding=1)
+        x = x1 + x2
+
+        x = F.dropout(x, p=0.5, training=self.training)
+        x = x.transpose(1, 2)
+        x = F.relu_(self.fc1(x))
+        x = x.transpose(1, 2)
+        x = F.dropout(x, p=0.5, training=self.training)
+        (clipwise_output, norm_att, segmentwise_output) = self.att_block(x)
+        logit = torch.sum(norm_att * self.att_block.cla(x), dim=2)
+        segmentwise_logit = self.att_block.cla(x).transpose(1, 2)
+        segmentwise_output = segmentwise_output.transpose(1, 2)
+
+        interpolate_ratio = frames_num // segmentwise_output.size(1)
+
+        # Get framewise output
+        framewise_output = interpolate(segmentwise_output,
+                                       interpolate_ratio)
+        framewise_output = pad_framewise_output(framewise_output, frames_num)
+
+        framewise_logit = interpolate(segmentwise_logit, interpolate_ratio)
+        framewise_logit = pad_framewise_output(framewise_logit, frames_num)
 
         output_dict = {
-            "clipwise_output": torch.sigmoid(clipwise_output)
+            "framewise_output": framewise_output,
+            "segmentwise_output": segmentwise_output,
+            "logit": logit,
+            "framewise_logit": framewise_logit,
+            "clipwise_output": clipwise_output
         }
 
         return output_dict
@@ -659,39 +673,6 @@ class BCEFocal2WayLoss(nn.Module):
         aux_loss = self.focal(clipwise_output_with_max, target)
 
         return self.weights[0] * loss + self.weights[1] * aux_loss
-
-
-def lsep_loss(input, target, average=True):
-
-    differences = input.unsqueeze(1) - input.unsqueeze(2)
-    where_different = (target.unsqueeze(1) < target.unsqueeze(2)).float()
-
-    exps = differences.exp() * where_different
-    lsep = torch.log(1 + exps.sum(2).sum(1))
-
-    if average:
-        return lsep.mean()
-    else:
-        return lsep
-
-
-class LSEPLoss(nn.Module):
-    def __init__(self):
-        super().__init__()
-
-    def forward(self, input, target):
-        input_ = input["clipwise_output"]
-        # input_ = input["logit"]
-        input_ = torch.where(torch.isnan(input_),
-                             torch.zeros_like(input_),
-                             input_)
-        input_ = torch.where(torch.isinf(input_),
-                             torch.zeros_like(input_),
-                             input_)
-
-        target = target.float()
-
-        return lsep_loss(input_, target)
 
 
 def rand_bbox(size, lam):
@@ -738,21 +719,17 @@ def mixup(data, targets, alpha):
 
 def cutmix_criterion(preds, new_targets):
     targets1, targets2, lam = new_targets[0], new_targets[1], new_targets[2]
-    # criterion = BCEFocal2WayLoss()
-    # return lam * criterion(preds, targets1) + (1 - lam) * criterion(preds, targets2)
-    # criterion = nn.BCEWithLogitsLoss()
-    criterion = LSEPLoss()
-    # return lam * criterion(preds['clipwise_output'], targets1) + (1 - lam) * criterion(preds['clipwise_output'], targets2)
+    criterion = BCEFocal2WayLoss()
     return lam * criterion(preds, targets1) + (1 - lam) * criterion(preds, targets2)
+    # criterion = nn.BCEWithLogitsLoss()
+    # return lam * criterion(preds['clipwise_output'], targets1) + (1 - lam) * criterion(preds['clipwise_output'], targets2)
 
 def mixup_criterion(preds, new_targets):
     targets1, targets2, lam = new_targets[0], new_targets[1], new_targets[2]
-    # criterion = BCEFocal2WayLoss()
-    # return lam * criterion(preds, targets1) + (1 - lam) * criterion(preds, targets2)
-    # criterion = nn.BCEWithLogitsLoss()
-    criterion = LSEPLoss()
-    # return lam * criterion(preds['clipwise_output'], targets1) + (1 - lam) * criterion(preds['clipwise_output'], targets2)
+    criterion = BCEFocal2WayLoss()
     return lam * criterion(preds, targets1) + (1 - lam) * criterion(preds, targets2)
+    # criterion = nn.BCEWithLogitsLoss()
+    # return lam * criterion(preds['clipwise_output'], targets1) + (1 - lam) * criterion(preds['clipwise_output'], targets2)
 
 
 # ====================================================
@@ -802,10 +779,9 @@ class MetricMeter(object):
     
         
 def loss_fn(logits, targets):
-    # loss_fct = BCEFocal2WayLoss()
+    loss_fct = BCEFocal2WayLoss()
     # loss_fct = nn.BCEWithLogitsLoss()
-    loss_fct = LSEPLoss()
-    loss = loss_fct(logits['clipwise_output'], targets)
+    loss = loss_fct(logits, targets)
     return loss
         
         
@@ -984,7 +960,7 @@ for fold in range(5):
         for phase, df_ in zip(["train", "valid"], [trn_df, val_df])
     }
 
-    model = ClassificationModel(
+    model = TimmSED(
         base_model_name=CFG.base_model_name,
         pretrained=CFG.pretrained,
         num_classes=CFG.num_classes,
