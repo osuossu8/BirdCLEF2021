@@ -270,14 +270,15 @@ class WaveformDataset(torchdata.Dataset):
             except:
                 pass
  
-        for ebird_code in secondary_labels.split():
-            try:
-                if rating > 0.4:
-                    targets[CFG.target_columns.index(ebird_code)] = 0.7
-                else:
-                    targets[CFG.target_columns.index(ebird_code)] = 0.5
-            except:
-                pass
+        if self.mode == 'train':
+            for ebird_code in secondary_labels.split():
+                try:
+                    if rating > 0.4:
+                        targets[CFG.target_columns.index(ebird_code)] = 0.7
+                    else:
+                        targets[CFG.target_columns.index(ebird_code)] = 0.5
+                except:
+                    pass
 
         len_new_image = new_image.shape[1]
         if len_new_image < 313:
@@ -964,6 +965,9 @@ for fold in range(5):
 
     val_df = short_audio[short_audio.kfold == fold].reset_index(drop=True)
     print(val_df.shape)
+
+    # trn_df = trn_df.head(256)
+    # val_df = val_df.head(256)
 
     loaders = {
         phase: torchdata.DataLoader(
