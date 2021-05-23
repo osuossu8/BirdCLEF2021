@@ -269,7 +269,7 @@ class WaveformDataset(torchdata.Dataset):
             except:
                 pass
  
-       for ebird_code in secondary_labels.split():
+        for ebird_code in secondary_labels.split():
             try:
                 targets[CFG.target_columns.index(ebird_code)] = 0.7
             except:
