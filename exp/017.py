@@ -267,11 +267,12 @@ class WaveformDataset(torchdata.Dataset):
         for ebird_code in labels.split():
             targets[CFG.target_columns.index(ebird_code)] = 1.0
  
-        secondary_targets = np.zeros(len(CFG.target_columns), dtype=float)
-        for ebird_code in secondary_labels.split():
-            if ebird_code == 'rocpig1':
-                ebird_code = 'rocpig'
-            secondary_targets[CFG.target_columns.index(ebird_code)] = 1.0
+        if self.mode == 'train':
+            secondary_targets = np.zeros(len(CFG.target_columns), dtype=float)
+            for ebird_code in secondary_labels.split():
+                if ebird_code == 'rocpig1':
+                    ebird_code = 'rocpig'
+                secondary_targets[CFG.target_columns.index(ebird_code)] = 1.0
 
         len_new_image = new_image.shape[1]
         if len_new_image < 313:
@@ -280,11 +281,17 @@ class WaveformDataset(torchdata.Dataset):
 
         new_image = albu_transforms[self.mode](image=new_image)['image'].T.astype(np.float32)
 
-        return {
-            "image": new_image,
-            "targets": targets,
-            "secondary_targets": secondary_targets,
-        }
+        if self.mode == 'train':
+            return {
+                "image": new_image,
+                "targets": targets,
+                "secondary_targets": secondary_targets,
+            }
+        else:
+            return {
+                "image": new_image,
+                "targets": targets,
+            } 
 
 
 def get_transforms(phase: str):
@@ -910,9 +917,10 @@ def valid_fn(model, data_loader, device):
         for data in tk0:
             inputs = data['image'].to(device)
             targets = data['targets'].to(device)
-            secondary_targets = data['secondary_targets'].to(device)
+            # secondary_targets = data['secondary_targets'].to(device)
             outputs = model(inputs)
-            loss = loss_fn(outputs, targets) * 0.7 + loss_fn(outputs, secondary_targets) * 0.3
+            # loss = loss_fn(outputs, targets) * 0.7 + loss_fn(outputs, secondary_targets) * 0.3
+            loss = loss_fn(outputs, targets)
 
             losses.update(loss.item(), inputs.size(0))
             scores.update(targets, outputs)
@@ -1007,6 +1015,7 @@ for fold in range(5):
     # val_df = new_train[new_train.kfold == fold].reset_index(drop=True)
 
     val_df = short_audio[short_audio.kfold == fold].reset_index(drop=True)
+    # val_df['secondary_labels'] = val_df['secondary_labels'].map(lambda x: ' '.join(ast.literal_eval(x)))
     print(val_df.shape)
 
     # trn_df = trn_df.head(256)
