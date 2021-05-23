@@ -265,20 +265,14 @@ class WaveformDataset(torchdata.Dataset):
 
         targets = np.zeros(len(CFG.target_columns), dtype=float)
         for ebird_code in labels.split():
+            targets[CFG.target_columns.index(ebird_code)] = 1.0
+ 
+        secondary_targets = np.zeros(len(CFG.target_columns), dtype=float)
+        for ebird_code in secondary_labels.split():
             try:
-                targets[CFG.target_columns.index(ebird_code)] = 1.0
+                secondary_targets[CFG.target_columns.index(ebird_code)] = 1.0
             except:
                 pass
- 
-        if self.mode == 'train':
-            for ebird_code in secondary_labels.split():
-                try:
-                    if rating > 0.4:
-                        targets[CFG.target_columns.index(ebird_code)] = 0.7
-                    else:
-                        targets[CFG.target_columns.index(ebird_code)] = 0.5
-                except:
-                    pass
 
         len_new_image = new_image.shape[1]
         if len_new_image < 313:
@@ -289,7 +283,8 @@ class WaveformDataset(torchdata.Dataset):
 
         return {
             "image": new_image,
-            "targets": targets
+            "targets": targets,
+            "secondary_targets": secondary_targets,
         }
 
 
@@ -686,6 +681,50 @@ class BCEFocal2WayLoss(nn.Module):
         return self.weights[0] * loss + self.weights[1] * aux_loss
 
 
+class SedScaledPosNegFocalLoss(nn.Module):
+    def __init__(self, gamma=0.0, alpha_1=1.0, alpha_0=1.0, secondary_factor=1.0):
+        super().__init__()
+
+        self.loss_fn = nn.BCELoss(reduction='none')
+        self.secondary_factor = secondary_factor
+        self.gamma = gamma
+        self.alpha_1 = alpha_1
+        self.alpha_0 = alpha_0
+        self.loss_keys = ["bce_loss", "F_loss", "FScaled_loss", "F_loss_0", "F_loss_1"]
+
+    def forward(self, y_pred, y_target):
+        y_true = y_target["primary_label"]
+        y_sec_true = y_target["secondary_labels"]
+        bs, s, o = y_true.shape
+
+        y_pred = torch.sigmoid(y_pred)
+
+        # Sigmoid has already been applied in the model
+        y_pred = torch.clamp(y_pred, min=EPSILON_FP16, max=1.0-EPSILON_FP16)
+        y_pred = y_pred.reshape(bs*s,o)
+        y_true = y_true.reshape(bs*s,o)
+        y_sec_true = y_sec_true.reshape(bs*s,o)
+
+        with torch.no_grad():
+            y_all_ones_mask = torch.ones_like(y_true, requires_grad=False)
+            y_all_zeros_mask = torch.zeros_like(y_true, requires_grad=False)
+            y_all_mask = torch.where(y_true > 0.0, y_all_ones_mask, y_all_zeros_mask)
+            y_ones_mask = torch.ones_like(y_sec_true, requires_grad=False)
+            y_zeros_mask = torch.ones_like(y_sec_true, requires_grad=False) *self.secondary_factor
+            y_secondary_mask = torch.where(y_sec_true > 0.0, y_zeros_mask, y_ones_mask)
+        bce_loss = self.loss_fn(y_pred, y_true)
+        pt = torch.exp(-bce_loss)
+        F_loss_0 = (self.alpha_0*(1-y_all_mask)) * (1-pt)**self.gamma * bce_loss
+        F_loss_1 = (self.alpha_1*y_all_mask) * (1-pt)**self.gamma * bce_loss
+
+        F_loss = F_loss_0 + F_loss_1
+
+        FScaled_loss = y_secondary_mask*F_loss
+        FScaled_loss = FScaled_loss.mean()
+
+        return FScaled_loss
+
+
 def rand_bbox(size, lam):
     W = size[2]
     H = size[3]
@@ -808,8 +847,9 @@ def train_fn(model, data_loader, device, optimizer, scheduler):
         optimizer.zero_grad()
         inputs = data['image'].to(device)
         targets = data['targets'].to(device)
+        secondary_targets = data['secondary_targets'].to(device)
         outputs = model(inputs)
-        loss = loss_fn(outputs, targets)
+        loss = loss_fn(outputs, targets) * 0.7 + loss_fn(outputs, secondary_targets) * 0.3
         if CFG.apex:
             with amp.scale_loss(loss, optimizer) as scaled_loss:
                 scaled_loss.backward()
@@ -834,15 +874,16 @@ def train_mixup_cutmix_fn(model, data_loader, device, optimizer, scheduler):
         optimizer.zero_grad()
         inputs = data['image'].to(device)
         targets = data['targets'].to(device)
+        secondary_targets = data['secondary_targets'].to(device)
 
         if np.random.rand()<0.5:
             inputs, new_targets = mixup(inputs, targets, 0.4)
             outputs = model(inputs)
-            loss = mixup_criterion(outputs, new_targets) 
+            loss = mixup_criterion(outputs, new_targets) * 0.7 + loss_fn(outputs, secondary_targets) * 0.3
         else:
             inputs, new_targets = cutmix(inputs, targets, 0.4)
             outputs = model(inputs)
-            loss = cutmix_criterion(outputs, new_targets)
+            loss = cutmix_criterion(outputs, new_targets) * 0.7 + loss_fn(outputs, secondary_targets) * 0.3
 
         if CFG.apex:
             with amp.scale_loss(loss, optimizer) as scaled_loss:
@@ -868,8 +909,9 @@ def valid_fn(model, data_loader, device):
         for data in tk0:
             inputs = data['image'].to(device)
             targets = data['targets'].to(device)
+            secondary_targets = data['secondary_targets'].to(device)
             outputs = model(inputs)
-            loss = loss_fn(outputs, targets)
+            loss = loss_fn(outputs, targets) * 0.7 + loss_fn(outputs, secondary_targets) * 0.3
 
             losses.update(loss.item(), inputs.size(0))
             scores.update(targets, outputs)
