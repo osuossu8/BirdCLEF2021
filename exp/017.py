@@ -742,7 +742,8 @@ def cutmix_criterion(preds, new_targets):
     # return lam * criterion(preds, targets1) + (1 - lam) * criterion(preds, targets2)
     # criterion = nn.BCEWithLogitsLoss()
     criterion = LSEPLoss()
-    return lam * criterion(preds['clipwise_output'], targets1) + (1 - lam) * criterion(preds['clipwise_output'], targets2)
+    # return lam * criterion(preds['clipwise_output'], targets1) + (1 - lam) * criterion(preds['clipwise_output'], targets2)
+    return lam * criterion(preds, targets1) + (1 - lam) * criterion(preds, targets2)
 
 def mixup_criterion(preds, new_targets):
     targets1, targets2, lam = new_targets[0], new_targets[1], new_targets[2]
@@ -750,7 +751,8 @@ def mixup_criterion(preds, new_targets):
     # return lam * criterion(preds, targets1) + (1 - lam) * criterion(preds, targets2)
     # criterion = nn.BCEWithLogitsLoss()
     criterion = LSEPLoss()
-    return lam * criterion(preds['clipwise_output'], targets1) + (1 - lam) * criterion(preds['clipwise_output'], targets2)
+    # return lam * criterion(preds['clipwise_output'], targets1) + (1 - lam) * criterion(preds['clipwise_output'], targets2)
+    return lam * criterion(preds, targets1) + (1 - lam) * criterion(preds, targets2)
 
 
 # ====================================================
