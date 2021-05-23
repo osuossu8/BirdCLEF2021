@@ -907,8 +907,7 @@ long_audio['secondary_labels'] = '[]'
 short_audio['rating'] = meta['rating'].copy()
 long_audio['rating'] = -1
 
-new_train = pd.concat([short_audio, long_audio]).reset_index(drop=True)
-
+# new_train = pd.concat([short_audio, long_audio]).reset_index(drop=True)
 
 
 # main loop
@@ -922,14 +921,19 @@ for fold in range(5):
     # trn_df = train[train.kfold != fold].reset_index(drop=True)
     # val_df = train[train.kfold == fold].reset_index(drop=True)
 
-    trn_df = new_train[new_train['kfold']!=fold].query('rating != 0').reset_index(drop=True)
+    # trn_df = new_train[new_train['kfold']!=fold].query('rating != 0').reset_index(drop=True)
     # trn_df['secondary_labels'] = trn_df['secondary_labels'].map(lambda x: ' '.join(ast.literal_eval(x)))
     # trn_df['primary_label'] = trn_df['primary_label'] + ' ' + trn_df['secondary_labels']
     # trn_df['len_label'] = trn_df['primary_label'].map(lambda x: len(x.split()))
+
+    trn_df = short_audio[short_audio.kfold != fold].reset_index(drop=True)
     print(trn_df['primary_label'].nunique())
+    print(trn_df['primary_label'].value_counts())
     print(trn_df.shape)
 
-    val_df = new_train[new_train.kfold == fold].reset_index(drop=True)
+    # val_df = new_train[new_train.kfold == fold].reset_index(drop=True)
+
+    val_df = short_audio[short_audio.kfold == fold].reset_index(drop=True)
     print(val_df.shape)
 
     loaders = {
