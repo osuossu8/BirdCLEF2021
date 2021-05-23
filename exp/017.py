@@ -241,6 +241,7 @@ class WaveformDataset(torchdata.Dataset):
         len_label = sample["len_label"]
         labels = sample["primary_label"]
         secondary_labels = sample["secondary_labels"]
+        rating = sample["rating"]
 
         image = np.load(wav_path).astype(np.uint8) # (313, XXX, 3)
 
@@ -271,7 +272,10 @@ class WaveformDataset(torchdata.Dataset):
  
         for ebird_code in secondary_labels.split():
             try:
-                targets[CFG.target_columns.index(ebird_code)] = 0.7
+                if rating > 0.4:
+                    targets[CFG.target_columns.index(ebird_code)] = 0.7
+                else:
+                    targets[CFG.target_columns.index(ebird_code)] = 0.5
             except:
                 pass
 
@@ -775,9 +779,11 @@ class MetricMeter(object):
 
     @property
     def avg(self):
-        self.f1_03 = metrics.f1_score(np.array(self.y_true), np.array(self.y_pred) > 0.3, average="samples")
-        self.f1_05 = metrics.f1_score(np.array(self.y_true), np.array(self.y_pred) > 0.5, average="samples")
+        # self.f1_03 = metrics.f1_score(np.array(self.y_true), np.array(self.y_pred) > 0.3, average="samples")
+        # self.f1_05 = metrics.f1_score(np.array(self.y_true), np.array(self.y_pred) > 0.5, average="samples")
         
+        self.f1_03 = metrics.f1_score(np.array(self.y_true) > 0.3, np.array(self.y_pred) > 0.3, average="samples")
+        self.f1_05 = metrics.f1_score(np.array(self.y_true) > 0.5, np.array(self.y_pred) > 0.5, average="samples")
         return {
             "f1_at_03" : self.f1_03,
             "f1_at_05" : self.f1_05,
