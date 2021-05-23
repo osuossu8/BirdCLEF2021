@@ -771,14 +771,14 @@ def mixup(data, targets, secondary_targets, alpha):
 def cutmix_criterion(preds, new_targets):
     targets1, targets2, secondary_targets1, secondary_targets2, lam = new_targets[0], new_targets[1], new_targets[2], new_targets[3], new_targets[4]
     criterion = BCEFocal2WayLoss()
-    return lam * criterion(preds, targets1) + (1 - lam) * criterion(preds, targets2) + lam * criterion(preds, secondary_targets1) + (1 - lam) * criterion(preds, secondary_targets2)
+    return (lam * criterion(preds, targets1) + (1 - lam) * criterion(preds, targets2)) * 0.7 + (lam * criterion(preds, secondary_targets1) + (1 - lam) * criterion(preds, secondary_targets2)) * 0.3
     # criterion = nn.BCEWithLogitsLoss()
     # return lam * criterion(preds['clipwise_output'], targets1) + (1 - lam) * criterion(preds['clipwise_output'], targets2)
 
 def mixup_criterion(preds, new_targets):
     targets1, targets2, secondary_targets1, secondary_targets2, lam = new_targets[0], new_targets[1], new_targets[2], new_targets[3], new_targets[4]
     criterion = BCEFocal2WayLoss()
-    return lam * criterion(preds, targets1) + (1 - lam) * criterion(preds, targets2) + lam * criterion(preds, secondary_targets1) + (1 - lam) * criterion(preds, secondary_targets2)
+    return (lam * criterion(preds, targets1) + (1 - lam) * criterion(preds, targets2)) * 0.7 + (lam * criterion(preds, secondary_targets1) + (1 - lam) * criterion(preds, secondary_targets2)) * 0.3
     # criterion = nn.BCEWithLogitsLoss()
     # return lam * criterion(preds['clipwise_output'], targets1) + (1 - lam) * criterion(preds['clipwise_output'], targets2)
 
