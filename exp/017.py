@@ -879,11 +879,11 @@ def train_mixup_cutmix_fn(model, data_loader, device, optimizer, scheduler):
         if np.random.rand()<0.5:
             inputs, new_targets = mixup(inputs, targets, 0.4)
             outputs = model(inputs)
-            loss = mixup_criterion(outputs, new_targets) * 0.7 + loss_fn(outputs, secondary_targets) * 0.3
+            loss = mixup_criterion(outputs, new_targets) * 0.7 + mixup_criterion(outputs, secondary_targets) * 0.3
         else:
             inputs, new_targets = cutmix(inputs, targets, 0.4)
             outputs = model(inputs)
-            loss = cutmix_criterion(outputs, new_targets) * 0.7 + loss_fn(outputs, secondary_targets) * 0.3
+            loss = cutmix_criterion(outputs, new_targets) * 0.7 + cutmix_criterion(outputs, secondary_targets) * 0.3
 
         if CFG.apex:
             with amp.scale_loss(loss, optimizer) as scaled_loss:
