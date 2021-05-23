@@ -837,11 +837,11 @@ def train_mixup_cutmix_fn(model, data_loader, device, optimizer, scheduler):
         # secondary_targets = data['secondary_targets'].to(device)
 
         if np.random.rand()<0.5:
-            inputs, new_targets = mixup(inputs, targets, secondary_targets, 0.4)
+            inputs, new_targets = mixup(inputs, targets, 0.4)
             outputs = model(inputs)
             loss = mixup_criterion(outputs, new_targets)
         else:
-            inputs, new_targets = cutmix(inputs, targets, secondary_targets, 0.4)
+            inputs, new_targets = cutmix(inputs, targets, 0.4)
             outputs = model(inputs)
             loss = cutmix_criterion(outputs, new_targets)
 
