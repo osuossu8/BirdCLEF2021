@@ -186,9 +186,9 @@ class CFG:
     pooling = "max"
     pretrained = True
     num_classes = 398
-    # in_channels = 1
+    in_channels = 1
     # num_classes = 397
-    in_channels = 3
+    # in_channels = 3
 
     N_FOLDS = 5
     LR = 2e-4 # 1e-3
@@ -280,7 +280,8 @@ class WaveformDataset(torchdata.Dataset):
             padding = np.zeros([CFG.n_mels, 313-len_new_image, 3])
             new_image = np.concatenate([new_image, padding], 1)
 
-        new_image = albu_transforms[self.mode](image=new_image)['image'].T.astype(np.float32)
+        new_image = albu_transforms[self.mode](image=new_image)['image']
+        new_image = new_image[:,:,0].T[np.newaxis, :, :].astype(np.float32)
 
         if self.mode == 'train':
             return {
@@ -571,8 +572,8 @@ class TimmSED(nn.Module):
     def __init__(self, base_model_name: str, pretrained=False, num_classes=24, in_channels=1):
         super().__init__()
         # Spec augmenter
-        self.spec_augmenter = SpecAugmentation(time_drop_width=64, time_stripes_num=2,
-                                               freq_drop_width=8, freq_stripes_num=2)
+        self.spec_augmenter = SpecAugmentation(time_drop_width=64//2, time_stripes_num=2,
+                                               freq_drop_width=8//2, freq_stripes_num=2)
 
         self.bn0 = nn.BatchNorm2d(CFG.n_mels)
 
