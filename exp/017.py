@@ -277,7 +277,7 @@ class WaveformDataset(torchdata.Dataset):
 
         len_new_image = new_image.shape[1]
         if len_new_image < 313:
-            padding = np.zeros([128, 313-len_new_image, 3])
+            padding = np.zeros([CFG.n_mels, 313-len_new_image, 3])
             new_image = np.concatenate([new_image, padding], 1)
 
         new_image = albu_transforms[self.mode](image=new_image)['image'].T.astype(np.float32)
