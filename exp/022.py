@@ -31,6 +31,8 @@ from catalyst.core import Callback, CallbackOrder, IRunner
 from catalyst.dl import Runner, SupervisedRunner
 from sklearn import model_selection
 from sklearn import metrics
+from sklearn.model_selection import KFold, train_test_split, GroupKFold, StratifiedKFold
+
 from timm.models.layers import SelectAdaptivePool2d
 from torch.optim.optimizer import Optimizer
 from torchlibrosa.stft import LogmelFilterBank, Spectrogram
@@ -927,6 +929,19 @@ short_audio['rating'] = meta['rating'].copy()
 long_audio['rating'] = 999 # -1
 
 # new_train = pd.concat([short_audio, long_audio]).reset_index(drop=True)
+
+del short_audio['kfold']
+
+kf = StratifiedKFold(n_splits=5, shuffle=True, random_state=6718)
+
+short_audio['kfold'] = -1
+y = short_audio['primary_label'].values
+
+for fold_id, (trn_idx, val_idx) in enumerate(kf.split(short_audio, y)):    
+    short_audio.loc[val_idx, 'kfold'] = fold_id
+    
+short_audio['kfold'] = short_audio['kfold'].astype(int)
+
 
 # main loop
 for fold in range(5):
