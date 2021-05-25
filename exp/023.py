@@ -237,104 +237,52 @@ class WaveformDataset(torchdata.Dataset):
         sample = self.df.loc[idx, :]
         
         wav_path = sample["filepath"]
-        start_sec = sample["start_seconds"]
-        end_sec = sample["end_seconds"]
-        len_label = sample["len_label"]
         labels = sample["primary_label"]
+        secondary_labels = sample["secondary_labels"]
 
-        # image = np.load(wav_path).astype(np.uint8) # (128, XXX, 3)
-        y, _ = sf.read(wav_path)
+        y, sr = sf.read(wav_path)
 
-        if np.random.rand()<0.5:
-            y = audio_augmenter(y)
+        len_y = len(y)
+        effective_length = sr * 5
+        if len_y < effective_length:
+            new_y = np.zeros(effective_length, dtype=y.dtype)
+            start = np.random.randint(effective_length - len_y)
+            new_y[start:start + len_y] = y
+            y = new_y.astype(np.float32)
+        elif len_y > effective_length:
+            start = np.random.randint(len_y - effective_length)
+            y = y[start:start + effective_length].astype(np.float32)
+        else:
+            y = y.astype(np.float32)
 
-        melspec = compute_melspec(y, params)
-        image = mono_to_color(melspec)
-        image = image.astype(np.uint8)
+        y = np.nan_to_num(y)
 
-        if start_sec == -1:
-            # here is for clips per birds zone
-            # each bird's clips has 5+ sec 
-            # so we have tot get ***random*** 313 (5sec) for training
-            len_image = image.shape[1]
-            if len_image < 313:
-                new_image = image
-            else:
-                rint = np.random.randint(156, len_image-156)
-                new_image = image[:,rint-156:rint+157,:] # (128, 313, 3)
-        else:    
-            # here is for train sound scapes data zone (for training use)
-            # each target is given per 5seconds
-            # so we have tot get 313 (5sec) for training
-            # where to cut is prepared in image_folds.csv
-            new_image = image[:,start_sec:end_sec,:] # (128, 313, 3)
-            
+        y = audio_augmenter(y)
+
+        y = np.nan_to_num(y)
 
         targets = np.zeros(len(CFG.target_columns), dtype=float)
         for ebird_code in labels.split():
             targets[CFG.target_columns.index(ebird_code)] = 1.0
 
-        len_new_image = new_image.shape[1]
-        if len_new_image < 313:
-            padding = np.zeros([128, 313-len_new_image, 3])
-            new_image = np.concatenate([new_image, padding], 1)
+        if self.mode == 'train':
+            secondary_targets = np.zeros(len(CFG.target_columns), dtype=float)
+            for ebird_code in secondary_labels.split():
+                if ebird_code == 'rocpig1':
+                    ebird_code = 'rocpig'
+                secondary_targets[CFG.target_columns.index(ebird_code)] = 1.0
 
-        new_image = albu_transforms[self.mode](image=new_image)['image']
-        new_image = new_image[:,:,0].T[np.newaxis, :, :].astype(np.float32)
-
-        return {
-            "image": new_image,
-            "targets": targets
-        }
-
-
-def mono_to_color(X, eps=1e-6, mean=None, std=None):
-    """
-    Converts a one channel array to a 3 channel one in [0, 255]
-    Arguments:
-        X {numpy array [H x W]} -- 2D array to convert
-    Keyword Arguments:
-        eps {float} -- To avoid dividing by 0 (default: {1e-6})
-        mean {None or np array} -- Mean for normalization (default: {None})
-        std {None or np array} -- Std for normalization (default: {None})
-    Returns:
-        numpy array [3 x H x W] -- RGB numpy array
-    """
-    X = np.stack([X, X, X], axis=-1)
-
-    # Standardize
-    mean = mean or X.mean()
-    std = std or X.std()
-    X = (X - mean) / (std + eps)
-
-    # Normalize to [0, 255]
-    _min, _max = X.min(), X.max()
-
-    if (_max - _min) > eps:
-        V = np.clip(X, _min, _max)
-        V = 255 * (V - _min) / (_max - _min)
-        V = V.astype(np.uint8)
-    else:
-        V = np.zeros_like(X, dtype=np.uint8)
-
-    return V
-
-
-def compute_melspec(y, params):
-    """
-    Computes a mel-spectrogram and puts it at decibel scale
-    Arguments:
-        y {np array} -- signal
-        params {AudioParams} -- Parameters to use for the spectrogram. Expected to have the attributes sr, n_mels, f_min, f_max
-    Returns:
-        np array -- Mel-spectrogram
-    """
-    melspec = librosa.feature.melspectrogram(
-        y, sr=params.sr, n_mels=params.n_mels, fmin=params.fmin, fmax=params.fmax,
-    )
-
-    melspec = librosa.power_to_db(melspec).astype(np.float32)
-    return melspec
+        if self.mode == 'train':
+            return {
+                "image": new_image,
+                "targets": targets,
+                "secondary_targets": secondary_targets,
+            }
+        else:
+            return {
+                "image": new_image,
+                "targets": targets,
+            }
 
 
 def get_transforms(phase: str):
@@ -612,9 +560,20 @@ class AttBlockV2(nn.Module):
 class TimmSED(nn.Module):
     def __init__(self, base_model_name: str, pretrained=False, num_classes=24, in_channels=1):
         super().__init__()
+
+        # Spectrogram extractor
+        self.spectrogram_extractor = Spectrogram(n_fft=CFG.n_fft, hop_length=CFG.hop_length,
+                                                 win_length=CFG.n_fft, window="hann", center=True, pad_mode="reflect",
+                                                 freeze_parameters=True)
+
+        # Logmel feature extractor
+        self.logmel_extractor = LogmelFilterBank(sr=CFG.sample_rate, n_fft=CFG.n_fft,
+                                                 n_mels=CFG.n_mels, fmin=CFG.fmin, fmax=CFG.fmax, ref=1.0, amin=1e-10, top_db=None,
+                                                 freeze_parameters=True)
+
         # Spec augmenter
-        self.spec_augmenter = SpecAugmentation(time_drop_width=64//2, time_stripes_num=2,
-                                               freq_drop_width=8//2, freq_stripes_num=2)
+        self.spec_augmenter = SpecAugmentation(time_drop_width=64, time_stripes_num=2,
+                                               freq_drop_width=8, freq_stripes_num=2)
 
         self.bn0 = nn.BatchNorm2d(CFG.n_mels)
 
@@ -638,7 +597,9 @@ class TimmSED(nn.Module):
         init_bn(self.bn0)
 
     def forward(self, input):
-        x = input # (batch_size, 1, time_steps, mel_bins)
+        # (batch_size, 1, time_steps, freq_bins)
+        x = self.spectrogram_extractor(input)
+        x = self.logmel_extractor(x)    # (batch_size, 1, time_steps, mel_bins)
 
         frames_num = x.shape[2]
 
@@ -846,8 +807,9 @@ def train_fn(model, data_loader, device, optimizer, scheduler):
         optimizer.zero_grad()
         inputs = data['image'].to(device)
         targets = data['targets'].to(device)
+        secondary_targets = data['secondary_targets'].to(device)
         outputs = model(inputs)
-        loss = loss_fn(outputs, targets)
+        loss = loss_fn(outputs, targets) * 0.7 + loss_fn(outputs, secondary_targets) * 0.3
         if CFG.apex:
             with amp.scale_loss(loss, optimizer) as scaled_loss:
                 scaled_loss.backward()
@@ -956,7 +918,7 @@ device = get_device()
 
 # data
 train = pd.read_csv('inputs/image_folds.csv')
-train['filepath'] = train['filepath'].map(lambda x: 'inputs/' + '/'.join(x.split('/')[3:]))
+train['filepath'] = train['filepath'].map(lambda x: 'inputs/' + '/'.join(x.split('/')[3:-1]) + '/' + x.split('/')[-1][:-4])
 # train['filepath'] = train['filepath'].map(lambda x: 'inputs/train_images/' + '/'.join(x.split('/')[4:]))
 
 short_audio = train.loc[:62873].copy()
@@ -983,7 +945,6 @@ for fold_id, (trn_idx, val_idx) in enumerate(kf.split(short_audio, y)):
     short_audio.loc[val_idx, 'kfold'] = fold_id
     
 short_audio['kfold'] = short_audio['kfold'].astype(int)
-
 
 # main loop
 for fold in range(5):
@@ -1034,10 +995,12 @@ for fold in range(5):
 
         start_time = time.time()
 
-        if epoch < CFG.cutmix_and_mixup_epochs:
-            train_avg, train_loss = train_mixup_cutmix_fn(model, loaders['train'], device, optimizer, scheduler)
-        else: 
-            train_avg, train_loss = train_fn(model, loaders['train'], device, optimizer, scheduler)
+        # if epoch < CFG.cutmix_and_mixup_epochs:
+        #     train_avg, train_loss = train_mixup_cutmix_fn(model, loaders['train'], device, optimizer, scheduler)
+        # else: 
+        #     train_avg, train_loss = train_fn(model, loaders['train'], device, optimizer, scheduler)
+
+        train_avg, train_loss = train_fn(model, loaders['train'], device, optimizer, scheduler)
 
         valid_avg, valid_loss = valid_fn(model, loaders['valid'], device)
         scheduler.step()
