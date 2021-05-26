@@ -189,6 +189,7 @@ class CFG:
 
     N_FOLDS = 5
     LR = 1e-3
+    apex = True
 
 
 def set_seed(seed=42):
@@ -934,7 +935,7 @@ for fold in range(5):
 
         start_time = time.time()
 
-        if epoch < 80:
+        if epoch < cutmix_and_mixup_epochs:
             train_avg, train_loss = train_mixup_cutmix_fn(model, loaders['train'], device, optimizer, scheduler)
         else: 
             train_avg, train_loss = train_fn(model, loaders['train'], device, optimizer, scheduler)
