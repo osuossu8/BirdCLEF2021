@@ -904,7 +904,8 @@ short_audio['rating'] = meta_data['rating'].copy()
 
 external_df = pd.DataFrame({
     'primary_label' : 'nocall',
-    'filepath' : ['inputs/train_images/102090.wav.npy'
+    'filepath' : [
+'inputs/train_images/102090.wav.npy',
 'inputs/train_images/ORANGE_236.2_240.7.wav.npy',
 'inputs/train_images/ORANGE_243.2_247.2.wav.npy',
 'inputs/train_images/ORANGE_263.2_267.0.wav.npy',
@@ -935,7 +936,8 @@ external_df = pd.DataFrame({
 'inputs/train_images/ORANGE_10.1_13.5.wav.npy',
 'inputs/train_images/ORANGE_120.5_124.0.wav.npy',
 'inputs/train_images/187090.wav.npy',
-'inputs/train_images/141977.wav.npy'],
+'inputs/train_images/141977.wav.npy'
+    ],
     'start_seconds' : -1,
     'end_seconds' : -1,
     'len_label' : -1,
