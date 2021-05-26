@@ -935,7 +935,7 @@ for fold in range(5):
 
         start_time = time.time()
 
-        if epoch < cutmix_and_mixup_epochs:
+        if epoch < CFG.cutmix_and_mixup_epochs:
             train_avg, train_loss = train_mixup_cutmix_fn(model, loaders['train'], device, optimizer, scheduler)
         else: 
             train_avg, train_loss = train_fn(model, loaders['train'], device, optimizer, scheduler)
