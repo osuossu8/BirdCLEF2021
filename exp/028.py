@@ -979,6 +979,7 @@ for fold in range(5):
     scheduler = torch.optim.lr_scheduler.CosineAnnealingWarmRestarts(optimizer, T_0=16, T_mult=1)
 
     model = model.to(device)
+    model.load_state_dict(torch.load('outputs/027/'+f'fold-{fold}.bin'))
     model, optimizer = amp.initialize(model, optimizer, opt_level='O1', verbosity=0)
 
     p = 0
