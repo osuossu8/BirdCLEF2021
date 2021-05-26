@@ -899,7 +899,7 @@ del train['kfold']; gc.collect()
 short_audio = train.loc[:62873].copy()
 long_audio = train.loc[62874:].copy()
 
-meta_data = pd.read_csv('../input/birdclef-2021/train_metadata.csv')
+meta_data = pd.read_csv('inputs/train_metadata.csv')
 short_audio['rating'] = meta_data['rating'].copy()
 
 external_df = pd.DataFrame({
