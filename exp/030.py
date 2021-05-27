@@ -225,9 +225,9 @@ def init_logger(log_file='train.log'):
 class WaveformDataset(torchdata.Dataset):
     def __init__(self,
                  df: pd.DataFrame,
-                 validation=False):
+                 mode='train'):
         self.df = df
-        self.validation = validation
+        self.mode = mode
 
     def __len__(self):
         return len(self.df)
@@ -242,18 +242,20 @@ class WaveformDataset(torchdata.Dataset):
         labels = sample["primary_label"]
         secondary_labels = sample["secondary_labels"]
 
+        y, sr = sf.read(wav_path)
+
         len_y = len(y)
         effective_length = sr * 5
         if len_y < effective_length:
             new_y = np.zeros(effective_length, dtype=y.dtype)
-            if not self.validation:
+            if self.mode == 'train':
                 start = np.random.randint(effective_length - len_y)
             else:
                 start = 0
             new_y[start:start + len_y] = y
             y = new_y.astype(np.float32)
         elif len_y > effective_length:
-            if not self.validation:
+            if self.mode == 'train':
                 start = np.random.randint(len_y - effective_length)
             else:
                 start = 0
@@ -261,7 +263,7 @@ class WaveformDataset(torchdata.Dataset):
         else:
             y = y.astype(np.float32)
 
-        y = np.nan_to_num(new_y)
+        y = np.nan_to_num(y)
 
         y = audio_augmenter(y)
 
@@ -284,10 +286,10 @@ class WaveformDataset(torchdata.Dataset):
 
 
         return {
-            "image": y,
+            "image": y.reshape(1, -1),
             "all_targets": all_targets,
-            "targets": targets,
-            "secondary_targets": secondary_targets,
+            "primary_targets": targets,
+            "secondary_targets": secondary_targets
         }
 
 
@@ -628,7 +630,9 @@ class PANNsDense121Att(nn.Module):
         
 
     def forward(self, input_data):
-        input_x, mixup_lambda = input_data
+        # input_x, mixup_lambda = input_data
+        input_x = input_data
+        mixup_lambda = None
         """
         Input: (batch_size, data_length)"""
         b, c, s = input_x.shape
@@ -671,6 +675,45 @@ class PANNsDense121Att(nn.Module):
         return output_dict
 
 
+# https://www.kaggle.com/c/rfcx-species-audio-detection/discussion/213075
+class BCEFocalLoss(nn.Module):
+    def __init__(self, alpha=0.25, gamma=2.0):
+        super().__init__()
+        self.alpha = alpha
+        self.gamma = gamma
+
+    def forward(self, preds, targets):
+        bce_loss = nn.BCEWithLogitsLoss(reduction='none')(preds, targets)
+        probas = torch.sigmoid(preds)
+        loss = targets * self.alpha * \
+            (1. - probas)**self.gamma * bce_loss + \
+            (1. - targets) * probas**self.gamma * bce_loss
+        loss = loss.mean()
+        return loss
+
+
+class BCEFocal2WayLoss(nn.Module):
+    def __init__(self, weights=[1, 1], class_weights=None):
+        super().__init__()
+
+        self.focal = BCEFocalLoss()
+
+        self.weights = weights
+
+    def forward(self, input, target):
+        input_ = input["logit"]
+        target = target.float()
+
+        framewise_output = input["framewise_logit"]
+        clipwise_output_with_max, _ = framewise_output.max(dim=1)
+
+        loss = self.focal(input_, target)
+        aux_loss = self.focal(clipwise_output_with_max, target)
+
+        return self.weights[0] * loss + self.weights[1] * aux_loss
+
+
+
 EPSILON_FP16 = 1e-5
 
 
@@ -686,15 +729,15 @@ class SedScaledPosNegFocalLoss(nn.Module):
         self.loss_keys = ["bce_loss", "F_loss", "FScaled_loss", "F_loss_0", "F_loss_1"]
 
     def forward(self, y_pred, y_target):
-        y_true = y_target["all_targets"]
-        y_sec_true = y_target["secondary_targets"]
-        bs, s, o = y_true.shape
+        y_true = y_target[0] # y_target["all_targets"]
+        y_sec_true = y_target[1] # y_target["secondary_targets"]
+        # bs, s, o = y_true.shape
 
         # Sigmoid has already been applied in the model
         y_pred = torch.clamp(y_pred, min=EPSILON_FP16, max=1.0-EPSILON_FP16)
-        y_pred = y_pred.reshape(bs*s,o)
-        y_true = y_true.reshape(bs*s,o)
-        y_sec_true = y_sec_true.reshape(bs*s,o)
+        # y_pred = y_pred.reshape(bs*s,o)
+        # y_true = y_true.reshape(bs*s,o)
+        # y_sec_true = y_sec_true.reshape(bs*s,o)
 
         with torch.no_grad():
             y_all_ones_mask = torch.ones_like(y_true, requires_grad=False)
@@ -763,9 +806,12 @@ class MetricMeter(object):
         }
     
         
-def loss_fn(y_pred, y):
-    loss_fct = SedScaledPosNegFocalLoss()
-    loss = loss_fct(y_pred["clipwise_output"], y)
+# def loss_fn(y_pred, y_all, y_second):
+    # loss_fct = SedScaledPosNegFocalLoss()
+    # loss = loss_fct(y_pred["clipwise_output"], (y_all, y_second))
+def loss_fn(logits, targets):
+    loss_fct = BCEFocalLoss() # BCEFocal2WayLoss()
+    loss = loss_fct(logits['clipwise_output'], targets)
     return loss
         
         
@@ -781,6 +827,7 @@ def train_fn(model, data_loader, device, optimizer, scheduler):
         targets = data['all_targets'].to(device)
         secondary_targets = data['secondary_targets'].to(device)
         outputs = model(inputs)
+        # loss = loss_fn(outputs, targets, secondary_targets)
         loss = loss_fn(outputs, targets)
         if CFG.apex:
             with amp.scale_loss(loss, optimizer) as scaled_loss:
@@ -804,11 +851,11 @@ def valid_fn(model, data_loader, device):
     with torch.no_grad():
         for data in tk0:
             inputs = data['image'].to(device)
-            targets = data['all_targets'].to(device)
+            targets = data['targets'].to(device)
             secondary_targets = data['secondary_targets'].to(device)
             outputs = model(inputs)
+            # loss = loss_fn(outputs, targets, secondary_targets)
             loss = loss_fn(outputs, targets)
-
             losses.update(loss.item(), inputs.size(0))
             scores.update(targets, outputs)
             tk0.set_postfix(loss=losses.avg)
@@ -848,7 +895,7 @@ model_config =  {
             "fmin": 50,
             "fmax": 14000,
             "classes_num": 397,
-            "apply_aug": True,
+            "apply_aug": False, # True,
             "top_db": None
         }
 
@@ -883,7 +930,7 @@ short_audio['rating'] = meta['rating'].copy()
 long_audio['rating'] = 999 # -1
 
 
-new_train = pd.concat([short_audio, long_audio, external_df]).reset_index(drop=True)
+new_train = pd.concat([short_audio, long_audio]).reset_index(drop=True)
 
 # main loop
 for fold in range(5):
@@ -900,7 +947,7 @@ for fold in range(5):
         phase: torchdata.DataLoader(
             WaveformDataset(
                 df_,
-                validation=(phase == "valid")
+                mode=phase
             ),
             **CFG.loader_params[phase])  # type: ignore
         for phase, df_ in zip(["train", "valid"], [trn_df, val_df])
