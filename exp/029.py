@@ -263,14 +263,14 @@ class WaveformDataset(torchdata.Dataset):
         for ebird_code in labels.split():
             targets[CFG.target_columns.index(ebird_code)] = 1.0
 
-       if self.mode == 'train':
-           secondary_targets = np.zeros(len(CFG.target_columns), dtype=float)
-           if secondary_labels is not None:
-                secondary_targets = np.zeros(len(CFG.target_columns), dtype=float)
-                for ebird_code in secondary_labels.split():
-                    if ebird_code == 'rocpig1':
-                        ebird_code = 'rocpig'
-                    secondary_targets[CFG.target_columns.index(ebird_code)] = 1.0
+        if self.mode == 'train':
+            secondary_targets = np.zeros(len(CFG.target_columns), dtype=float)
+            if secondary_labels is not None:
+                 secondary_targets = np.zeros(len(CFG.target_columns), dtype=float)
+                 for ebird_code in secondary_labels.split():
+                     if ebird_code == 'rocpig1':
+                         ebird_code = 'rocpig'
+                     secondary_targets[CFG.target_columns.index(ebird_code)] = 1.0
 
         len_new_image = new_image.shape[1]
         if len_new_image < 313:
