@@ -894,7 +894,7 @@ model_config =  {
             "mel_bins": 64,
             "fmin": 50,
             "fmax": 14000,
-            "classes_num": 397,
+            "classes_num": 398,
             "apply_aug": False, # True,
             "top_db": None
         }
