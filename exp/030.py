@@ -52,10 +52,10 @@ class CFG:
     # Globals #
     ######################
     seed = 6718
-    epochs = 30 # 80
+    epochs = 55
     # cutmix_and_mixup_epochs = 75
     train = True
-    folds = [1]
+    folds = [0]
     img_size = 224
     main_metric = "epoch_f1_at_03"
     minimize_metric = False
@@ -675,45 +675,6 @@ class PANNsDense121Att(nn.Module):
         return output_dict
 
 
-# https://www.kaggle.com/c/rfcx-species-audio-detection/discussion/213075
-class BCEFocalLoss(nn.Module):
-    def __init__(self, alpha=0.25, gamma=2.0):
-        super().__init__()
-        self.alpha = alpha
-        self.gamma = gamma
-
-    def forward(self, preds, targets):
-        bce_loss = nn.BCEWithLogitsLoss(reduction='none')(preds, targets)
-        probas = torch.sigmoid(preds)
-        loss = targets * self.alpha * \
-            (1. - probas)**self.gamma * bce_loss + \
-            (1. - targets) * probas**self.gamma * bce_loss
-        loss = loss.mean()
-        return loss
-
-
-class BCEFocal2WayLoss(nn.Module):
-    def __init__(self, weights=[1, 1], class_weights=None):
-        super().__init__()
-
-        self.focal = BCEFocalLoss()
-
-        self.weights = weights
-
-    def forward(self, input, target):
-        input_ = input["logit"]
-        target = target.float()
-
-        framewise_output = input["framewise_logit"]
-        clipwise_output_with_max, _ = framewise_output.max(dim=1)
-
-        loss = self.focal(input_, target)
-        aux_loss = self.focal(clipwise_output_with_max, target)
-
-        return self.weights[0] * loss + self.weights[1] * aux_loss
-
-
-
 EPSILON_FP16 = 1e-5
 
 
@@ -729,12 +690,13 @@ class SedScaledPosNegFocalLoss(nn.Module):
         self.loss_keys = ["bce_loss", "F_loss", "FScaled_loss", "F_loss_0", "F_loss_1"]
 
     def forward(self, y_pred, y_target):
-        y_true = y_target[0] # y_target["all_targets"]
-        y_sec_true = y_target[1] # y_target["secondary_targets"]
+        y_true = y_target[0].float() # y_target["all_targets"]
+        y_sec_true = y_target[1].float() # y_target["secondary_targets"]
         # bs, s, o = y_true.shape
 
         # Sigmoid has already been applied in the model
         y_pred = torch.clamp(y_pred, min=EPSILON_FP16, max=1.0-EPSILON_FP16)
+        y_pred = y_pred.float()
         # y_pred = y_pred.reshape(bs*s,o)
         # y_true = y_true.reshape(bs*s,o)
         # y_sec_true = y_sec_true.reshape(bs*s,o)
@@ -793,12 +755,12 @@ class MetricMeter(object):
     def update(self, y_true, y_pred):
         self.y_true.extend(y_true.cpu().detach().numpy().tolist())
         # self.y_pred.extend(torch.sigmoid(y_pred).cpu().detach().numpy().tolist())
-        self.y_pred.extend(y_pred["clipwise_output"].cpu().detach().numpy().tolist())
+        self.y_pred.extend(y_pred["clipwise_output"].max(axis=1)[0].cpu().detach().numpy().tolist())
 
     @property
     def avg(self):
-        self.f1_03 = metrics.f1_score(np.array(self.y_true), np.array(self.y_pred) > 0.3, average="samples")
-        self.f1_05 = metrics.f1_score(np.array(self.y_true), np.array(self.y_pred) > 0.5, average="samples")
+        self.f1_03 = metrics.f1_score(np.array(self.y_true), np.array(self.y_pred) > 0.3, average="micro")
+        self.f1_05 = metrics.f1_score(np.array(self.y_true), np.array(self.y_pred) > 0.5, average="micro")
         
         return {
             "f1_at_03" : self.f1_03,
@@ -806,14 +768,11 @@ class MetricMeter(object):
         }
     
         
-# def loss_fn(y_pred, y_all, y_second):
-    # loss_fct = SedScaledPosNegFocalLoss()
-    # loss = loss_fct(y_pred["clipwise_output"], (y_all, y_second))
-def loss_fn(logits, targets):
-    loss_fct = BCEFocalLoss() # BCEFocal2WayLoss()
-    loss = loss_fct(logits['clipwise_output'], targets)
+def loss_fn(y_pred, y_all, y_second):
+    loss_fct = SedScaledPosNegFocalLoss()
+    loss = loss_fct(y_pred["clipwise_output"], (y_all, y_second))
     return loss
-        
+
         
 def train_fn(model, data_loader, device, optimizer, scheduler):
     model.train()
@@ -827,8 +786,7 @@ def train_fn(model, data_loader, device, optimizer, scheduler):
         targets = data['all_targets'].to(device)
         secondary_targets = data['secondary_targets'].to(device)
         outputs = model(inputs)
-        # loss = loss_fn(outputs, targets, secondary_targets)
-        loss = loss_fn(outputs, targets)
+        loss = loss_fn(outputs, targets, secondary_targets)
         if CFG.apex:
             with amp.scale_loss(loss, optimizer) as scaled_loss:
                 scaled_loss.backward()
@@ -851,11 +809,10 @@ def valid_fn(model, data_loader, device):
     with torch.no_grad():
         for data in tk0:
             inputs = data['image'].to(device)
-            targets = data['targets'].to(device)
+            targets = data['all_targets'].to(device)
             secondary_targets = data['secondary_targets'].to(device)
             outputs = model(inputs)
-            # loss = loss_fn(outputs, targets, secondary_targets)
-            loss = loss_fn(outputs, targets)
+            loss = loss_fn(outputs, targets, secondary_targets)
             losses.update(loss.item(), inputs.size(0))
             scores.update(targets, outputs)
             tk0.set_postfix(loss=losses.avg)
@@ -971,11 +928,6 @@ for fold in range(5):
         logger.info("Starting {} epoch...".format(epoch+1))
 
         start_time = time.time()
-
-        # if epoch < CFG.cutmix_and_mixup_epochs:
-        #     train_avg, train_loss = train_mixup_cutmix_fn(model, loaders['train'], device, optimizer, scheduler)
-        # else: 
-        #     train_avg, train_loss = train_fn(model, loaders['train'], device, optimizer, scheduler)
 
         train_avg, train_loss = train_fn(model, loaders['train'], device, optimizer, scheduler)
         valid_avg, valid_loss = valid_fn(model, loaders['valid'], device)
