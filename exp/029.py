@@ -966,7 +966,8 @@ external_df = pd.DataFrame({
     'secondary_labels' : None
 })
 
-new_train = pd.concat([short_audio, long_audio, external_df]).reset_index(drop=True)
+# new_train = pd.concat([short_audio, long_audio, external_df]).reset_index(drop=True)
+new_train = pd.concat([short_audio, long_audio]).reset_index(drop=True)
 
 # main loop
 for fold in range(5):
@@ -976,7 +977,7 @@ for fold in range(5):
     logger.info(f"Fold {fold} Training")
     logger.info("=" * 120)
 
-    trn_df = new_train[new_train['kfold']!=fold].query('rating >= 4').reset_index(drop=True)
+    trn_df = new_train[new_train['kfold']!=fold].reset_index(drop=True)
     val_df = new_train[new_train.kfold == fold].reset_index(drop=True)
 
     loaders = {
