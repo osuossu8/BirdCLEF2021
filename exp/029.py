@@ -52,7 +52,7 @@ class CFG:
     # Globals #
     ######################
     seed = 6718
-    epochs = 50 # 80
+    epochs = 30 # 80
     # cutmix_and_mixup_epochs = 75
     train = True
     folds = [1]
@@ -190,6 +190,9 @@ class CFG:
     N_FOLDS = 5
     LR = 1e-3
     apex = True
+    T_max=10
+    min_lr=1e-6
+
 
 def set_seed(seed=42):
     random.seed(seed)
@@ -804,7 +807,7 @@ def train_fn(model, data_loader, device, optimizer, scheduler):
         targets = data['targets'].to(device)
         secondary_targets = data['secondary_targets'].to(device)
         outputs = model(inputs)
-        loss = loss_fn(outputs, targets) * 0.7 + loss_fn(outputs, secondary_targets) * 0.3
+        loss = loss_fn(outputs, targets) * 0.8 + loss_fn(outputs, secondary_targets) * 0.2
         if CFG.apex:
             with amp.scale_loss(loss, optimizer) as scaled_loss:
                 scaled_loss.backward()
@@ -997,7 +1000,8 @@ for fold in range(5):
         in_channels=CFG.in_channels)
 
     optimizer = torch.optim.Adam(model.parameters(), lr=CFG.LR)
-    scheduler = torch.optim.lr_scheduler.CosineAnnealingWarmRestarts(optimizer, T_0=16, T_mult=1)
+    # scheduler = torch.optim.lr_scheduler.CosineAnnealingWarmRestarts(optimizer, T_0=16, T_mult=1)
+    scheduler = CosineAnnealingLR(optimizer, T_max=CFG.T_max, eta_min=CFG.min_lr, last_epoch=-1)
 
     model = model.to(device)
     model.load_state_dict(torch.load('outputs/013/'+f'fold-{fold}.bin'))
