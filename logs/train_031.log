@@ -1,0 +1,422 @@
+========================================================================================================================
+Fold 0 Training
+========================================================================================================================
+Starting 1 epoch...
+========================================================================================================================
+Fold 0 Training
+========================================================================================================================
+Starting 1 epoch...
+========================================================================================================================
+Fold 0 Training
+========================================================================================================================
+Starting 1 epoch...
+========================================================================================================================
+Fold 0 Training
+========================================================================================================================
+Starting 1 epoch...
+========================================================================================================================
+Fold 0 Training
+========================================================================================================================
+Starting 1 epoch...
+========================================================================================================================
+Fold 0 Training
+========================================================================================================================
+Starting 1 epoch...
+========================================================================================================================
+Fold 0 Training
+========================================================================================================================
+Starting 1 epoch...
+========================================================================================================================
+Fold 0 Training
+========================================================================================================================
+Starting 1 epoch...
+========================================================================================================================
+Fold 0 Training
+========================================================================================================================
+Starting 1 epoch...
+========================================================================================================================
+Fold 0 Training
+========================================================================================================================
+Starting 1 epoch...
+========================================================================================================================
+Fold 0 Training
+========================================================================================================================
+Starting 1 epoch...
+Epoch 1 - avg_train_loss: 0.70189  avg_val_loss: 0.17574  time: 2s
+Epoch 1 - train_f1_at_03:0.01086  valid_f1_at_03:0.01861
+Epoch 1 - train_f1_at_05:0.01056  valid_f1_at_05:0.01697
+>>>>>>>> Model Improved From -inf ----> 0.018611746758199852
+other scores here... 0.018611746758199852, 0.016965127238454288
+Starting 2 epoch...
+Epoch 2 - avg_train_loss: 0.22539  avg_val_loss: 0.05567  time: 1s
+Epoch 2 - train_f1_at_03:0.02635  valid_f1_at_03:0.06334
+Epoch 2 - train_f1_at_05:0.05718  valid_f1_at_05:0.09426
+>>>>>>>> Model Improved From 0.018611746758199852 ----> 0.06333739342265529
+other scores here... 0.06333739342265529, 0.09426229508196722
+Starting 3 epoch...
+Epoch 3 - avg_train_loss: 0.09346  avg_val_loss: 0.04507  time: 1s
+Epoch 3 - train_f1_at_03:0.08381  valid_f1_at_03:0.11429
+Epoch 3 - train_f1_at_05:0.25060  valid_f1_at_05:0.13462
+>>>>>>>> Model Improved From 0.06333739342265529 ----> 0.11428571428571428
+other scores here... 0.11428571428571428, 0.1346153846153846
+Starting 4 epoch...
+Epoch 4 - avg_train_loss: 0.07206  avg_val_loss: 0.04611  time: 1s
+Epoch 4 - train_f1_at_03:0.12787  valid_f1_at_03:0.11789
+Epoch 4 - train_f1_at_05:0.33441  valid_f1_at_05:0.12981
+>>>>>>>> Model Improved From 0.11428571428571428 ----> 0.1178861788617886
+other scores here... 0.1178861788617886, 0.1298076923076923
+Starting 5 epoch...
+========================================================================================================================
+Fold 0 Training
+========================================================================================================================
+Starting 1 epoch...
+========================================================================================================================
+Fold 0 Training
+========================================================================================================================
+Starting 1 epoch...
+Epoch 1 - avg_train_loss: 0.21850  avg_val_loss: 0.05214  time: 2s
+Epoch 1 - train_f1_at_03:0.02842  valid_f1_at_03:0.09310
+Epoch 1 - train_f1_at_05:0.06337  valid_f1_at_05:0.12108
+>>>>>>>> Model Improved From -inf ----> 0.09309791332263244
+other scores here... 0.09309791332263244, 0.12107623318385649
+Starting 2 epoch...
+Epoch 2 - avg_train_loss: 0.05220  avg_val_loss: 0.04294  time: 1s
+Epoch 2 - train_f1_at_03:0.20442  valid_f1_at_03:0.13921
+Epoch 2 - train_f1_at_05:0.41420  valid_f1_at_05:0.13043
+>>>>>>>> Model Improved From 0.09309791332263244 ----> 0.13921113689095127
+other scores here... 0.13921113689095127, 0.13043478260869565
+Starting 3 epoch...
+Epoch 3 - avg_train_loss: 0.04836  avg_val_loss: 0.04200  time: 1s
+Epoch 3 - train_f1_at_03:0.22947  valid_f1_at_03:0.13647
+Epoch 3 - train_f1_at_05:0.44681  valid_f1_at_05:0.13043
+Starting 4 epoch...
+Epoch 4 - avg_train_loss: 0.03048  avg_val_loss: 0.04424  time: 2s
+Epoch 4 - train_f1_at_03:0.42402  valid_f1_at_03:0.20674
+Epoch 4 - train_f1_at_05:0.47775  valid_f1_at_05:0.16098
+>>>>>>>> Model Improved From 0.13921113689095127 ----> 0.20674157303370785
+other scores here... 0.20674157303370785, 0.16097560975609754
+Starting 5 epoch...
+Epoch 5 - avg_train_loss: 0.02806  avg_val_loss: 0.04942  time: 1s
+Epoch 5 - train_f1_at_03:0.46065  valid_f1_at_03:0.19861
+Epoch 5 - train_f1_at_05:0.45205  valid_f1_at_05:0.14851
+Starting 6 epoch...
+Epoch 6 - avg_train_loss: 0.02839  avg_val_loss: 0.05183  time: 2s
+Epoch 6 - train_f1_at_03:0.45455  valid_f1_at_03:0.15238
+Epoch 6 - train_f1_at_05:0.48951  valid_f1_at_05:0.13075
+Starting 7 epoch...
+Epoch 7 - avg_train_loss: 0.02715  avg_val_loss: 0.05254  time: 2s
+Epoch 7 - train_f1_at_03:0.46800  valid_f1_at_03:0.14833
+Epoch 7 - train_f1_at_05:0.47146  valid_f1_at_05:0.13043
+Starting 8 epoch...
+Epoch 8 - avg_train_loss: 0.02563  avg_val_loss: 0.04970  time: 2s
+Epoch 8 - train_f1_at_03:0.49167  valid_f1_at_03:0.13942
+Epoch 8 - train_f1_at_05:0.52048  valid_f1_at_05:0.13043
+Starting 9 epoch...
+Epoch 9 - avg_train_loss: 0.02360  avg_val_loss: 0.04467  time: 2s
+Epoch 9 - train_f1_at_03:0.43623  valid_f1_at_03:0.17453
+Epoch 9 - train_f1_at_05:0.49524  valid_f1_at_05:0.16588
+Starting 10 epoch...
+========================================================================================================================
+Fold 0 Training
+========================================================================================================================
+Starting 1 epoch...
+Epoch 1 - avg_train_loss: 0.70135  avg_val_loss: 0.20255  time: 1s
+Epoch 1 - train_f1_at_03:0.01079  valid_f1_at_03:0.02051
+Epoch 1 - train_f1_at_05:0.00939  valid_f1_at_05:0.02583
+>>>>>>>> Model Improved From -inf ----> 0.020514087988136434
+other scores here... 0.020514087988136434, 0.025825825825825828
+Starting 2 epoch...
+Epoch 2 - avg_train_loss: 0.22305  avg_val_loss: 0.05915  time: 1s
+Epoch 2 - train_f1_at_03:0.02719  valid_f1_at_03:0.07306
+Epoch 2 - train_f1_at_05:0.06180  valid_f1_at_05:0.10485
+>>>>>>>> Model Improved From 0.020514087988136434 ----> 0.0730593607305936
+other scores here... 0.0730593607305936, 0.10485436893203882
+Starting 3 epoch...
+Epoch 3 - avg_train_loss: 0.09593  avg_val_loss: 0.04667  time: 1s
+Epoch 3 - train_f1_at_03:0.07997  valid_f1_at_03:0.10736
+Epoch 3 - train_f1_at_05:0.25060  valid_f1_at_05:0.12529
+>>>>>>>> Model Improved From 0.0730593607305936 ----> 0.10735586481113321
+other scores here... 0.10735586481113321, 0.12529002320185614
+Starting 4 epoch...
+Epoch 4 - avg_train_loss: 0.07326  avg_val_loss: 0.04676  time: 1s
+Epoch 4 - train_f1_at_03:0.12507  valid_f1_at_03:0.11485
+Epoch 4 - train_f1_at_05:0.33071  valid_f1_at_05:0.12706
+>>>>>>>> Model Improved From 0.10735586481113321 ----> 0.11485148514851483
+other scores here... 0.11485148514851483, 0.12705882352941175
+Starting 5 epoch...
+Epoch 5 - avg_train_loss: 0.07047  avg_val_loss: 0.04267  time: 1s
+Epoch 5 - train_f1_at_03:0.13389  valid_f1_at_03:0.13182
+Epoch 5 - train_f1_at_05:0.34416  valid_f1_at_05:0.12981
+>>>>>>>> Model Improved From 0.11485148514851483 ----> 0.1318181818181818
+other scores here... 0.1318181818181818, 0.1298076923076923
+Starting 6 epoch...
+Epoch 6 - avg_train_loss: 0.05381  avg_val_loss: 0.04015  time: 1s
+Epoch 6 - train_f1_at_03:0.19611  valid_f1_at_03:0.13397
+Epoch 6 - train_f1_at_05:0.42000  valid_f1_at_05:0.13043
+>>>>>>>> Model Improved From 0.1318181818181818 ----> 0.1339712918660287
+other scores here... 0.1339712918660287, 0.13043478260869565
+Starting 7 epoch...
+Epoch 7 - avg_train_loss: 0.03883  avg_val_loss: 0.04139  time: 1s
+Epoch 7 - train_f1_at_03:0.33136  valid_f1_at_03:0.15814
+Epoch 7 - train_f1_at_05:0.49309  valid_f1_at_05:0.13842
+>>>>>>>> Model Improved From 0.1339712918660287 ----> 0.15813953488372093
+other scores here... 0.15813953488372093, 0.13842482100238662
+Starting 8 epoch...
+========================================================================================================================
+Fold 0 Training
+========================================================================================================================
+Starting 1 epoch...
+Epoch 1 - avg_train_loss: 0.03061  avg_val_loss: 0.02588  time: 655s
+Epoch 1 - train_f1_at_03:0.00775  valid_f1_at_03:0.02793
+Epoch 1 - train_f1_at_05:0.00426  valid_f1_at_05:0.02524
+>>>>>>>> Model Improved From -inf ----> 0.027930383728244915
+other scores here... 0.027930383728244915, 0.02523659305993691
+Starting 2 epoch...
+Epoch 2 - avg_train_loss: 0.02598  avg_val_loss: 0.02349  time: 654s
+Epoch 2 - train_f1_at_03:0.01689  valid_f1_at_03:0.04404
+Epoch 2 - train_f1_at_05:0.00971  valid_f1_at_05:0.03295
+>>>>>>>> Model Improved From 0.027930383728244915 ----> 0.044043144304624936
+other scores here... 0.044043144304624936, 0.032949616282949616
+Starting 3 epoch...
+Epoch 3 - avg_train_loss: 0.02473  avg_val_loss: 0.02300  time: 652s
+Epoch 3 - train_f1_at_03:0.02700  valid_f1_at_03:0.09490
+Epoch 3 - train_f1_at_05:0.01350  valid_f1_at_05:0.05662
+>>>>>>>> Model Improved From 0.044043144304624936 ----> 0.09489777122858721
+other scores here... 0.09489777122858721, 0.05661678225250436
+Starting 4 epoch...
+Epoch 4 - avg_train_loss: 0.02396  avg_val_loss: 0.02161  time: 653s
+Epoch 4 - train_f1_at_03:0.03755  valid_f1_at_03:0.13630
+Epoch 4 - train_f1_at_05:0.01669  valid_f1_at_05:0.08102
+>>>>>>>> Model Improved From 0.09489777122858721 ----> 0.1362968273884209
+other scores here... 0.1362968273884209, 0.08102345415778252
+Starting 5 epoch...
+Epoch 5 - avg_train_loss: 0.02330  avg_val_loss: 0.02091  time: 653s
+Epoch 5 - train_f1_at_03:0.05865  valid_f1_at_03:0.14309
+Epoch 5 - train_f1_at_05:0.02641  valid_f1_at_05:0.08088
+>>>>>>>> Model Improved From 0.1362968273884209 ----> 0.1430872671242471
+other scores here... 0.1430872671242471, 0.08087622524703361
+Starting 6 epoch...
+Epoch 6 - avg_train_loss: 0.02282  avg_val_loss: 0.01976  time: 653s
+Epoch 6 - train_f1_at_03:0.06745  valid_f1_at_03:0.19342
+Epoch 6 - train_f1_at_05:0.03132  valid_f1_at_05:0.13256
+>>>>>>>> Model Improved From 0.1430872671242471 ----> 0.19341872189671613
+other scores here... 0.19341872189671613, 0.13256128160586758
+Starting 7 epoch...
+Epoch 7 - avg_train_loss: 0.02251  avg_val_loss: 0.01868  time: 652s
+Epoch 7 - train_f1_at_03:0.07888  valid_f1_at_03:0.25270
+Epoch 7 - train_f1_at_05:0.03907  valid_f1_at_05:0.17851
+>>>>>>>> Model Improved From 0.19341872189671613 ----> 0.2527013120658606
+other scores here... 0.2527013120658606, 0.17851055946646904
+Starting 8 epoch...
+Epoch 8 - avg_train_loss: 0.02213  avg_val_loss: 0.01853  time: 655s
+Epoch 8 - train_f1_at_03:0.09889  valid_f1_at_03:0.27179
+Epoch 8 - train_f1_at_05:0.05226  valid_f1_at_05:0.19680
+>>>>>>>> Model Improved From 0.2527013120658606 ----> 0.27178692310125585
+other scores here... 0.27178692310125585, 0.19680478175847696
+Starting 9 epoch...
+Epoch 9 - avg_train_loss: 0.02201  avg_val_loss: 0.01835  time: 654s
+Epoch 9 - train_f1_at_03:0.10210  valid_f1_at_03:0.30582
+Epoch 9 - train_f1_at_05:0.05442  valid_f1_at_05:0.23454
+>>>>>>>> Model Improved From 0.27178692310125585 ----> 0.3058243885271864
+other scores here... 0.3058243885271864, 0.23453917213172554
+Starting 10 epoch...
+Epoch 10 - avg_train_loss: 0.02159  avg_val_loss: 0.01828  time: 654s
+Epoch 10 - train_f1_at_03:0.11906  valid_f1_at_03:0.29112
+Epoch 10 - train_f1_at_05:0.06535  valid_f1_at_05:0.22294
+Starting 11 epoch...
+Epoch 11 - avg_train_loss: 0.02131  avg_val_loss: 0.01821  time: 654s
+Epoch 11 - train_f1_at_03:0.12843  valid_f1_at_03:0.29844
+Epoch 11 - train_f1_at_05:0.07200  valid_f1_at_05:0.23087
+Starting 12 epoch...
+Epoch 12 - avg_train_loss: 0.02114  avg_val_loss: 0.01810  time: 652s
+Epoch 12 - train_f1_at_03:0.14032  valid_f1_at_03:0.34229
+Epoch 12 - train_f1_at_05:0.08212  valid_f1_at_05:0.28789
+>>>>>>>> Model Improved From 0.3058243885271864 ----> 0.34228653815346827
+other scores here... 0.34228653815346827, 0.28789072760703965
+Starting 13 epoch...
+Epoch 13 - avg_train_loss: 0.02099  avg_val_loss: 0.01721  time: 656s
+Epoch 13 - train_f1_at_03:0.14908  valid_f1_at_03:0.35317
+Epoch 13 - train_f1_at_05:0.08869  valid_f1_at_05:0.28724
+>>>>>>>> Model Improved From 0.34228653815346827 ----> 0.35317056135960184
+other scores here... 0.35317056135960184, 0.2872369687800853
+Starting 14 epoch...
+Epoch 14 - avg_train_loss: 0.02102  avg_val_loss: 0.01696  time: 653s
+Epoch 14 - train_f1_at_03:0.14242  valid_f1_at_03:0.36903
+Epoch 14 - train_f1_at_05:0.08676  valid_f1_at_05:0.29991
+>>>>>>>> Model Improved From 0.35317056135960184 ----> 0.3690268772671446
+other scores here... 0.3690268772671446, 0.29991151044857395
+Starting 15 epoch...
+Epoch 15 - avg_train_loss: 0.02060  avg_val_loss: 0.01660  time: 652s
+Epoch 15 - train_f1_at_03:0.16041  valid_f1_at_03:0.38504
+Epoch 15 - train_f1_at_05:0.09974  valid_f1_at_05:0.32616
+>>>>>>>> Model Improved From 0.3690268772671446 ----> 0.3850415512465374
+other scores here... 0.3850415512465374, 0.3261603654902999
+Starting 16 epoch...
+Epoch 16 - avg_train_loss: 0.02030  avg_val_loss: 0.01640  time: 654s
+Epoch 16 - train_f1_at_03:0.17384  valid_f1_at_03:0.39751
+Epoch 16 - train_f1_at_05:0.11102  valid_f1_at_05:0.34106
+>>>>>>>> Model Improved From 0.3850415512465374 ----> 0.3975074856356721
+other scores here... 0.3975074856356721, 0.34105509051975863
+Starting 17 epoch...
+Epoch 17 - avg_train_loss: 0.02061  avg_val_loss: 0.01657  time: 654s
+Epoch 17 - train_f1_at_03:0.16797  valid_f1_at_03:0.38815
+Epoch 17 - train_f1_at_05:0.10514  valid_f1_at_05:0.31763
+Starting 18 epoch...
+Epoch 18 - avg_train_loss: 0.02008  avg_val_loss: 0.01631  time: 654s
+Epoch 18 - train_f1_at_03:0.18610  valid_f1_at_03:0.40585
+Epoch 18 - train_f1_at_05:0.12065  valid_f1_at_05:0.34880
+>>>>>>>> Model Improved From 0.3975074856356721 ----> 0.4058474139567682
+other scores here... 0.4058474139567682, 0.3487992691203341
+Starting 19 epoch...
+Epoch 19 - avg_train_loss: 0.01997  avg_val_loss: 0.01592  time: 654s
+Epoch 19 - train_f1_at_03:0.18820  valid_f1_at_03:0.42777
+Epoch 19 - train_f1_at_05:0.12140  valid_f1_at_05:0.37810
+>>>>>>>> Model Improved From 0.4058474139567682 ----> 0.4277677473375723
+other scores here... 0.4277677473375723, 0.37809598741148703
+Starting 20 epoch...
+Epoch 20 - avg_train_loss: 0.02037  avg_val_loss: 0.01618  time: 654s
+Epoch 20 - train_f1_at_03:0.17592  valid_f1_at_03:0.41586
+Epoch 20 - train_f1_at_05:0.11098  valid_f1_at_05:0.35506
+Starting 21 epoch...
+Epoch 21 - avg_train_loss: 0.01987  avg_val_loss: 0.01581  time: 653s
+Epoch 21 - train_f1_at_03:0.19709  valid_f1_at_03:0.41557
+Epoch 21 - train_f1_at_05:0.13173  valid_f1_at_05:0.35725
+Starting 22 epoch...
+Epoch 22 - avg_train_loss: 0.01994  avg_val_loss: 0.01552  time: 653s
+Epoch 22 - train_f1_at_03:0.19439  valid_f1_at_03:0.44021
+Epoch 22 - train_f1_at_05:0.13201  valid_f1_at_05:0.38076
+>>>>>>>> Model Improved From 0.4277677473375723 ----> 0.4402059889376311
+other scores here... 0.4402059889376311, 0.3807621686048384
+Starting 23 epoch...
+Epoch 23 - avg_train_loss: 0.01978  avg_val_loss: 0.01653  time: 654s
+Epoch 23 - train_f1_at_03:0.19261  valid_f1_at_03:0.38804
+Epoch 23 - train_f1_at_05:0.13003  valid_f1_at_05:0.32621
+Starting 24 epoch...
+Epoch 24 - avg_train_loss: 0.01944  avg_val_loss: 0.01561  time: 655s
+Epoch 24 - train_f1_at_03:0.20703  valid_f1_at_03:0.43804
+Epoch 24 - train_f1_at_05:0.14268  valid_f1_at_05:0.39910
+Starting 25 epoch...
+Epoch 25 - avg_train_loss: 0.01918  avg_val_loss: 0.01551  time: 653s
+Epoch 25 - train_f1_at_03:0.22372  valid_f1_at_03:0.44547
+Epoch 25 - train_f1_at_05:0.15917  valid_f1_at_05:0.40561
+>>>>>>>> Model Improved From 0.4402059889376311 ----> 0.4454674941499644
+other scores here... 0.4454674941499644, 0.405606337599025
+Starting 26 epoch...
+Epoch 26 - avg_train_loss: 0.01927  avg_val_loss: 0.01539  time: 655s
+Epoch 26 - train_f1_at_03:0.22551  valid_f1_at_03:0.45491
+Epoch 26 - train_f1_at_05:0.15932  valid_f1_at_05:0.40441
+>>>>>>>> Model Improved From 0.4454674941499644 ----> 0.4549132947976879
+other scores here... 0.4549132947976879, 0.40440878009179754
+Starting 27 epoch...
+Epoch 27 - avg_train_loss: 0.01959  avg_val_loss: 0.01522  time: 655s
+Epoch 27 - train_f1_at_03:0.21988  valid_f1_at_03:0.46171
+Epoch 27 - train_f1_at_05:0.15189  valid_f1_at_05:0.41742
+>>>>>>>> Model Improved From 0.4549132947976879 ----> 0.46171428571428574
+other scores here... 0.46171428571428574, 0.4174155562441897
+Starting 28 epoch...
+Epoch 28 - avg_train_loss: 0.01929  avg_val_loss: 0.01512  time: 652s
+Epoch 28 - train_f1_at_03:0.22445  valid_f1_at_03:0.46028
+Epoch 28 - train_f1_at_05:0.15958  valid_f1_at_05:0.41502
+Starting 29 epoch...
+Epoch 29 - avg_train_loss: 0.01884  avg_val_loss: 0.01517  time: 654s
+Epoch 29 - train_f1_at_03:0.24653  valid_f1_at_03:0.45412
+Epoch 29 - train_f1_at_05:0.17866  valid_f1_at_05:0.40946
+Starting 30 epoch...
+Epoch 30 - avg_train_loss: 0.01887  avg_val_loss: 0.01560  time: 654s
+Epoch 30 - train_f1_at_03:0.23944  valid_f1_at_03:0.45136
+Epoch 30 - train_f1_at_05:0.17378  valid_f1_at_05:0.41411
+Starting 31 epoch...
+Epoch 31 - avg_train_loss: 0.01867  avg_val_loss: 0.01505  time: 655s
+Epoch 31 - train_f1_at_03:0.23622  valid_f1_at_03:0.46749
+Epoch 31 - train_f1_at_05:0.17300  valid_f1_at_05:0.43186
+>>>>>>>> Model Improved From 0.46171428571428574 ----> 0.46749241658240653
+other scores here... 0.46749241658240653, 0.4318609879093505
+Starting 32 epoch...
+Epoch 32 - avg_train_loss: 0.01869  avg_val_loss: 0.01553  time: 654s
+Epoch 32 - train_f1_at_03:0.25138  valid_f1_at_03:0.45371
+Epoch 32 - train_f1_at_05:0.18638  valid_f1_at_05:0.42366
+Starting 33 epoch...
+Epoch 33 - avg_train_loss: 0.01882  avg_val_loss: 0.01594  time: 653s
+Epoch 33 - train_f1_at_03:0.24525  valid_f1_at_03:0.43859
+Epoch 33 - train_f1_at_05:0.17972  valid_f1_at_05:0.39454
+Starting 34 epoch...
+Epoch 34 - avg_train_loss: 0.01855  avg_val_loss: 0.01496  time: 654s
+Epoch 34 - train_f1_at_03:0.24585  valid_f1_at_03:0.46969
+Epoch 34 - train_f1_at_05:0.18312  valid_f1_at_05:0.43160
+>>>>>>>> Model Improved From 0.46749241658240653 ----> 0.46969461295172915
+other scores here... 0.46969461295172915, 0.43160218284382856
+Starting 35 epoch...
+Epoch 35 - avg_train_loss: 0.01900  avg_val_loss: 0.01486  time: 655s
+Epoch 35 - train_f1_at_03:0.24302  valid_f1_at_03:0.47930
+Epoch 35 - train_f1_at_05:0.17902  valid_f1_at_05:0.43940
+>>>>>>>> Model Improved From 0.46969461295172915 ----> 0.4793009451506891
+other scores here... 0.4793009451506891, 0.4394040741866829
+Starting 36 epoch...
+Epoch 36 - avg_train_loss: 0.01859  avg_val_loss: 0.01491  time: 655s
+Epoch 36 - train_f1_at_03:0.24890  valid_f1_at_03:0.48187
+Epoch 36 - train_f1_at_05:0.18668  valid_f1_at_05:0.45036
+>>>>>>>> Model Improved From 0.4793009451506891 ----> 0.4818740361784936
+other scores here... 0.4818740361784936, 0.45036405611791874
+Starting 37 epoch...
+Epoch 37 - avg_train_loss: 0.01841  avg_val_loss: 0.01463  time: 653s
+Epoch 37 - train_f1_at_03:0.26270  valid_f1_at_03:0.48310
+Epoch 37 - train_f1_at_05:0.19616  valid_f1_at_05:0.44512
+>>>>>>>> Model Improved From 0.4818740361784936 ----> 0.4830954938366325
+other scores here... 0.4830954938366325, 0.4451186214428737
+Starting 38 epoch...
+Epoch 38 - avg_train_loss: 0.01854  avg_val_loss: 0.01436  time: 655s
+Epoch 38 - train_f1_at_03:0.24850  valid_f1_at_03:0.49236
+Epoch 38 - train_f1_at_05:0.18581  valid_f1_at_05:0.44677
+>>>>>>>> Model Improved From 0.4830954938366325 ----> 0.4923599320882852
+other scores here... 0.4923599320882852, 0.4467738464848914
+Starting 39 epoch...
+Epoch 39 - avg_train_loss: 0.01859  avg_val_loss: 0.01429  time: 653s
+Epoch 39 - train_f1_at_03:0.24980  valid_f1_at_03:0.50044
+Epoch 39 - train_f1_at_05:0.18599  valid_f1_at_05:0.46759
+>>>>>>>> Model Improved From 0.4923599320882852 ----> 0.5004383218534754
+other scores here... 0.5004383218534754, 0.46758616615966214
+Starting 40 epoch...
+Epoch 40 - avg_train_loss: 0.01830  avg_val_loss: 0.01425  time: 653s
+Epoch 40 - train_f1_at_03:0.26348  valid_f1_at_03:0.49733
+Epoch 40 - train_f1_at_05:0.19920  valid_f1_at_05:0.45455
+Starting 41 epoch...
+Epoch 41 - avg_train_loss: 0.01827  avg_val_loss: 0.01417  time: 653s
+Epoch 41 - train_f1_at_03:0.24794  valid_f1_at_03:0.49870
+Epoch 41 - train_f1_at_05:0.18872  valid_f1_at_05:0.46763
+Starting 42 epoch...
+Epoch 42 - avg_train_loss: 0.01825  avg_val_loss: 0.01421  time: 655s
+Epoch 42 - train_f1_at_03:0.26071  valid_f1_at_03:0.49788
+Epoch 42 - train_f1_at_05:0.19937  valid_f1_at_05:0.46235
+Starting 43 epoch...
+Epoch 43 - avg_train_loss: 0.01839  avg_val_loss: 0.01534  time: 653s
+Epoch 43 - train_f1_at_03:0.27189  valid_f1_at_03:0.46062
+Epoch 43 - train_f1_at_05:0.20576  valid_f1_at_05:0.43216
+Starting 44 epoch...
+Epoch 44 - avg_train_loss: 0.01852  avg_val_loss: 0.01444  time: 653s
+Epoch 44 - train_f1_at_03:0.26525  valid_f1_at_03:0.49403
+Epoch 44 - train_f1_at_05:0.20031  valid_f1_at_05:0.46559
+Starting 45 epoch...
+Epoch 45 - avg_train_loss: 0.01804  avg_val_loss: 0.01426  time: 655s
+Epoch 45 - train_f1_at_03:0.27711  valid_f1_at_03:0.49778
+Epoch 45 - train_f1_at_05:0.21361  valid_f1_at_05:0.48022
+Starting 46 epoch...
+Epoch 46 - avg_train_loss: 0.01816  avg_val_loss: 0.01402  time: 652s
+Epoch 46 - train_f1_at_03:0.25555  valid_f1_at_03:0.51533
+Epoch 46 - train_f1_at_05:0.19627  valid_f1_at_05:0.48744
+>>>>>>>> Model Improved From 0.5004383218534754 ----> 0.5153272978811193
+other scores here... 0.5153272978811193, 0.4874408339867003
+Starting 47 epoch...
+Epoch 47 - avg_train_loss: 0.01811  avg_val_loss: 0.01389  time: 652s
+Epoch 47 - train_f1_at_03:0.26836  valid_f1_at_03:0.51688
+Epoch 47 - train_f1_at_05:0.20637  valid_f1_at_05:0.48669
+>>>>>>>> Model Improved From 0.5153272978811193 ----> 0.5168823441915812
+other scores here... 0.5168823441915812, 0.4866926846445025
+Starting 48 epoch...
+Epoch 48 - avg_train_loss: 0.01788  avg_val_loss: 0.01443  time: 656s
+Epoch 48 - train_f1_at_03:0.27835  valid_f1_at_03:0.49789
+Epoch 48 - train_f1_at_05:0.21429  valid_f1_at_05:0.46718
+Starting 49 epoch...
+Epoch 49 - avg_train_loss: 0.01815  avg_val_loss: 0.01453  time: 655s
+Epoch 49 - train_f1_at_03:0.25986  valid_f1_at_03:0.49125
+Epoch 49 - train_f1_at_05:0.19994  valid_f1_at_05:0.45328
+Starting 50 epoch...
