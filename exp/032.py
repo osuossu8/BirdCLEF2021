@@ -1003,11 +1003,13 @@ for fold in range(5):
     }
 
     model = PANNsDense121Att(**model_config)
-    net_dict = model.state_dict() 
-    pretrain = torch.load('pretrainings/final_5fold_sed_dense121_nomix_fold4_checkpoint_50_score0.7728.pt')
-    pretrain_dict = {k: v for k, v in pretrain.items() if k in net_dict.keys()}
-    net_dict.update(pretrain_dict)
-    model.load_state_dict(net_dict)
+    # net_dict = model.state_dict() 
+    # pretrain = torch.load('pretrainings/final_5fold_sed_dense121_nomix_fold4_checkpoint_50_score0.7728.pt')
+    pretrain = torch.load(f'outputs/031/fold-{fold}.bin')
+    # pretrain_dict = {k: v for k, v in pretrain.items() if k in net_dict.keys()}
+    # net_dict.update(pretrain_dict)
+    # model.load_state_dict(net_dict)
+    model.load_state_dict(pretrain)
     print("pretrained model loaded !")
 
     optimizer = torch.optim.Adam(model.parameters(), lr=CFG.LR)
