@@ -611,9 +611,11 @@ class TimmSED(nn.Module):
         (clipwise_output, norm_att, segmentwise_output) = self.att_block(x)
         segmentwise_output = segmentwise_output.transpose(1, 2)
 
+        interpolate_ratio = frames_num // segmentwise_output.size(1)
+
         # Get framewise output
         framewise_output = interpolate(segmentwise_output,
-                                       self.interpolate_ratio)
+                                       interpolate_ratio)
         framewise_output = pad_framewise_output(framewise_output, frames_num)
         frame_shape =  framewise_output.shape
         clip_shape = clipwise_output.shape
