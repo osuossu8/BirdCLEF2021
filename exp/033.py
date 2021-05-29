@@ -568,8 +568,9 @@ class TimmSED(nn.Module):
         else:
             in_features = base_model.classifier.in_features
 
-        self.fc1 = nn.Linear(1024, 1024, bias=True)
-        self.att_block = AttBlockV2(1024, classes_num, activation='sigmoid')
+        self.fc1 = nn.Linear(in_features, in_features, bias=True)
+        self.att_block = AttBlockV2(
+            in_features, num_classes, activation="sigmoid")
 
         self.init_weight()
 
