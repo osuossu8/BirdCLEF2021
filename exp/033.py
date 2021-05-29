@@ -556,7 +556,7 @@ class TimmSED(nn.Module):
         self.spec_augmenter = SpecAugmentation(time_drop_width=64//2, time_stripes_num=2,
                                                freq_drop_width=8//2, freq_stripes_num=2)
 
-        self.bn0 = nn.BatchNorm2d(mel_bins)
+        self.bn0 = nn.BatchNorm2d(CFG.n_mels)
 
         base_model = timm.create_model(
             base_model_name, pretrained=pretrained, in_chans=in_channels)
@@ -577,10 +577,6 @@ class TimmSED(nn.Module):
         init_bn(self.bn0)
         init_layer(self.fc1)
         
-    def cnn_feature_extractor(self, x):
-        x = self.densenet_features(x)
-        return x
-    
 
     def forward(self, input_data):
         x = input_data # (batch_size, 1, time_steps, mel_bins)
