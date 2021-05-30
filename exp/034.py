@@ -52,8 +52,8 @@ class CFG:
     # Globals #
     ######################
     seed = 6718
-    epochs = 80 # 100
-    cutmix_and_mixup_epochs = 75 # 95
+    epochs = 80 # 41 / 80
+    cutmix_and_mixup_epochs = 75
     train = True
     folds = [0]
     img_size = 224
