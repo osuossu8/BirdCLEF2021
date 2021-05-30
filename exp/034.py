@@ -972,6 +972,7 @@ for fold in range(5):
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=CFG.T_max, eta_min=CFG.min_lr, last_epoch=-1)
 
     model = model.to(device)
+    model.load_state_dict(torch.load('outputs/033/' + f'fold-{fold}.bin'))
     model, optimizer = amp.initialize(model, optimizer, opt_level='O1', verbosity=0)
 
 
