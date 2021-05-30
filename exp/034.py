@@ -973,6 +973,7 @@ for fold in range(5):
 
     model = model.to(device)
     model.load_state_dict(torch.load('outputs/033/' + f'fold-{fold}.bin'))
+    print('loaded 033 weights !!')
     model, optimizer = amp.initialize(model, optimizer, opt_level='O1', verbosity=0)
 
 
