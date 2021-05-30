@@ -609,6 +609,8 @@ class TimmSED(nn.Module):
         x = F.dropout(x, p=0.5, training=self.training)
 
         (clipwise_output, norm_att, segmentwise_output) = self.att_block(x)
+        logit = torch.sum(norm_att * self.att_block.cla(x), dim=2)
+        segmentwise_logit = self.att_block.cla(x).transpose(1, 2)
         segmentwise_output = segmentwise_output.transpose(1, 2)
 
         interpolate_ratio = frames_num // segmentwise_output.size(1)
@@ -617,11 +619,15 @@ class TimmSED(nn.Module):
         framewise_output = interpolate(segmentwise_output,
                                        interpolate_ratio)
         framewise_output = pad_framewise_output(framewise_output, frames_num)
-        frame_shape =  framewise_output.shape
-        clip_shape = clipwise_output.shape
+
+        framewise_logit = interpolate(segmentwise_logit, interpolate_ratio)
+        framewise_logit = pad_framewise_output(framewise_logit, frames_num)
+
         output_dict = {
             'framewise_output': framewise_output,
             'clipwise_output': clipwise_output,
+            'logit': logit,
+            'framewise_logit': framewise_logit,
         }
 
         return output_dict
@@ -691,6 +697,27 @@ class BCEFocalLoss(nn.Module):
         return loss
 
 
+class BCEFocal2WayLoss(nn.Module):
+    def __init__(self, weights=[1, 1], class_weights=None):
+        super().__init__()
+
+        self.focal = BCEFocalLoss()
+
+        self.weights = weights
+
+    def forward(self, input, target):
+        input_ = input["logit"]
+        target = target.float()
+
+        framewise_output = input["framewise_logit"]
+        clipwise_output_with_max, _ = framewise_output.max(dim=1)
+
+        loss = self.focal(input_, target)
+        aux_loss = self.focal(clipwise_output_with_max, target)
+
+        return self.weights[0] * loss + self.weights[1] * aux_loss
+
+
 def rand_bbox(size, lam):
     W = size[2]
     H = size[3]
@@ -734,15 +761,17 @@ def mixup(data, targets, alpha):
     new_targets = [targets, shuffled_targets, lam]
     return new_data, new_targets
 
+
 def cutmix_criterion(preds, new_targets):
     targets1, targets2, lam = new_targets[0], new_targets[1], new_targets[2]
-    criterion = BCEFocalLoss()
-    return lam * criterion(preds["clipwise_output"].float(), targets1.float()) + (1 - lam) * criterion(preds["clipwise_output"].float(), targets2.float())
+    criterion = BCEFocal2WayLoss()
+    return lam * criterion(preds, targets1) + (1 - lam) * criterion(preds, targets2)
 
 def mixup_criterion(preds, new_targets):
     targets1, targets2, lam = new_targets[0], new_targets[1], new_targets[2]
-    criterion = BCEFocalLoss()
-    return lam * criterion(preds["clipwise_output"].float(), targets1.float()) + (1 - lam) * criterion(preds["clipwise_output"].float(), targets2.float())
+    criterion = BCEFocal2WayLoss()
+    return lam * criterion(preds, targets1) + (1 - lam) * criterion(preds, targets2)
+
 
 # ====================================================
 # Training helper functions
@@ -796,9 +825,10 @@ class MetricMeter(object):
 #     loss = loss_fct(y_pred["clipwise_output"], (y_all, y_second))
 #     return loss
 
+
 def loss_fn(logits, targets):
-    loss_fct = BCEFocalLoss()
-    loss = loss_fct(logits["clipwise_output"].float(), targets.float())
+    loss_fct = BCEFocal2WayLoss()
+    loss = loss_fct(logits, targets)
     return loss
 
         
