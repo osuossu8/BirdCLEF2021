@@ -737,12 +737,12 @@ def mixup(data, targets, alpha):
 def cutmix_criterion(preds, new_targets):
     targets1, targets2, lam = new_targets[0], new_targets[1], new_targets[2]
     criterion = BCEFocalLoss()
-    return lam * criterion(preds["clipwise_output"], targets1) + (1 - lam) * criterion(preds["clipwise_output"], targets2)
+    return lam * criterion(preds["clipwise_output"].float(), targets1.float()) + (1 - lam) * criterion(preds["clipwise_output"].float(), targets2.float())
 
 def mixup_criterion(preds, new_targets):
     targets1, targets2, lam = new_targets[0], new_targets[1], new_targets[2]
     criterion = BCEFocalLoss()
-    return lam * criterion(preds["clipwise_output"], targets1) + (1 - lam) * criterion(preds["clipwise_output"], targets2)
+    return lam * criterion(preds["clipwise_output"].float(), targets1.float()) + (1 - lam) * criterion(preds["clipwise_output"].float(), targets2.float())
 
 # ====================================================
 # Training helper functions
@@ -798,7 +798,7 @@ class MetricMeter(object):
 
 def loss_fn(logits, targets):
     loss_fct = BCEFocalLoss()
-    loss = loss_fct(logits["clipwise_output"], targets)
+    loss = loss_fct(logits["clipwise_output"].float(), targets.float())
     return loss
 
         
