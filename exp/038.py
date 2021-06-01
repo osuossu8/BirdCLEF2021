@@ -266,7 +266,6 @@ class WaveformDataset(torchdata.Dataset):
             new_image = np.concatenate([new_image, padding], 1)
 
         new_image = albu_transforms[self.mode](image=new_image)['image']
-        new_image = new_image[:,:,0].T[np.newaxis, :, :].astype(np.float32)
 
         return {
             "image": new_image,
