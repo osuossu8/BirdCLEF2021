@@ -546,128 +546,6 @@ class AttBlockV2(nn.Module):
             return torch.sigmoid(x)
 
 
-class TimmSED(nn.Module):
-    def __init__(self, base_model_name: str, pretrained=False, num_classes=24, in_channels=1):
-        super().__init__()
-        # Spec augmenter
-        self.spec_augmenter = SpecAugmentation(time_drop_width=64//2, time_stripes_num=2,
-                                               freq_drop_width=8//2, freq_stripes_num=2)
-
-        self.bn0 = nn.BatchNorm2d(CFG.n_mels)
-
-        base_model = timm.create_model(
-            base_model_name, pretrained=pretrained, in_chans=in_channels)
-        layers = list(base_model.children())[:-2]
-        self.encoder = nn.Sequential(*layers)
-
-        if hasattr(base_model, "fc"):
-            in_features = base_model.fc.in_features
-        else:
-            in_features = base_model.classifier.in_features
-        self.fc1 = nn.Linear(in_features, in_features, bias=True)
-        self.att_block = AttBlockV2(
-            in_features, num_classes, activation="sigmoid")
-
-        self.init_weight()
-
-    def init_weight(self):
-        init_layer(self.fc1)
-        init_bn(self.bn0)
-
-    def forward(self, input):
-        x = input # (batch_size, 1, time_steps, mel_bins)
-
-        frames_num = x.shape[2]
-
-        x = x.transpose(1, 3)
-        x = self.bn0(x)
-        x = x.transpose(1, 3)
-
-        if self.training:
-            if random.random() < 0.25:
-                x = self.spec_augmenter(x)
-
-        x = x.transpose(2, 3)
-        # (batch_size, channels, freq, frames)
-        x = self.encoder(x)
-
-        # (batch_size, channels, frames)
-        x = torch.mean(x, dim=2)
-
-        # channel smoothing
-        x1 = F.max_pool1d(x, kernel_size=3, stride=1, padding=1)
-        x2 = F.avg_pool1d(x, kernel_size=3, stride=1, padding=1)
-        x = x1 + x2
-
-        x = F.dropout(x, p=0.5, training=self.training)
-        x = x.transpose(1, 2)
-        x = F.relu_(self.fc1(x))
-        x = x.transpose(1, 2)
-        x = F.dropout(x, p=0.5, training=self.training)
-        (clipwise_output, norm_att, segmentwise_output) = self.att_block(x)
-        logit = torch.sum(norm_att * self.att_block.cla(x), dim=2)
-        segmentwise_logit = self.att_block.cla(x).transpose(1, 2)
-        segmentwise_output = segmentwise_output.transpose(1, 2)
-
-        interpolate_ratio = frames_num // segmentwise_output.size(1)
-
-        # Get framewise output
-        framewise_output = interpolate(segmentwise_output,
-                                       interpolate_ratio)
-        framewise_output = pad_framewise_output(framewise_output, frames_num)
-
-        framewise_logit = interpolate(segmentwise_logit, interpolate_ratio)
-        framewise_logit = pad_framewise_output(framewise_logit, frames_num)
-
-        output_dict = {
-            "framewise_output": framewise_output,
-            "segmentwise_output": segmentwise_output,
-            "logit": logit,
-            "framewise_logit": framewise_logit,
-            "clipwise_output": clipwise_output
-        }
-
-        return output_dict
-
-
-# https://www.kaggle.com/c/rfcx-species-audio-detection/discussion/213075
-class BCEFocalLoss(nn.Module):
-    def __init__(self, alpha=0.25, gamma=2.0):
-        super().__init__()
-        self.alpha = alpha
-        self.gamma = gamma
-
-    def forward(self, preds, targets):
-        bce_loss = nn.BCEWithLogitsLoss(reduction='none')(preds, targets)
-        probas = torch.sigmoid(preds)
-        loss = targets * self.alpha * \
-            (1. - probas)**self.gamma * bce_loss + \
-            (1. - targets) * probas**self.gamma * bce_loss
-        loss = loss.mean()
-        return loss
-
-
-class BCEFocal2WayLoss(nn.Module):
-    def __init__(self, weights=[1, 1], class_weights=None):
-        super().__init__()
-
-        self.focal = BCEFocalLoss()
-
-        self.weights = weights
-
-    def forward(self, input, target):
-        input_ = input["logit"]
-        target = target.float()
-
-        framewise_output = input["framewise_logit"]
-        clipwise_output_with_max, _ = framewise_output.max(dim=1)
-
-        loss = self.focal(input_, target)
-        aux_loss = self.focal(clipwise_output_with_max, target)
-
-        return self.weights[0] * loss + self.weights[1] * aux_loss
-
-
 def rand_bbox(size, lam):
     W = size[2]
     H = size[3]
@@ -712,12 +590,12 @@ def mixup(data, targets, alpha):
 
 def cutmix_criterion(preds, new_targets):
     targets1, targets2, lam = new_targets[0], new_targets[1], new_targets[2]
-    criterion = BCEFocal2WayLoss()
+    criterion = torch.nn.BCEWithLogitsLoss(reduction="mean")
     return lam * criterion(preds, targets1) + (1 - lam) * criterion(preds, targets2)
 
 def mixup_criterion(preds, new_targets):
     targets1, targets2, lam = new_targets[0], new_targets[1], new_targets[2]
-    criterion = BCEFocal2WayLoss()
+    criterion = torch.nn.BCEWithLogitsLoss(reduction="mean")
     return lam * criterion(preds, targets1) + (1 - lam) * criterion(preds, targets2)
 
 
@@ -753,8 +631,7 @@ class MetricMeter(object):
     
     def update(self, y_true, y_pred):
         self.y_true.extend(y_true.cpu().detach().numpy().tolist())
-        # self.y_pred.extend(torch.sigmoid(y_pred).cpu().detach().numpy().tolist())
-        self.y_pred.extend(y_pred["clipwise_output"].cpu().detach().numpy().tolist())
+        self.y_pred.extend(torch.sigmoid(y_pred).cpu().detach().numpy().tolist())
 
     @property
     def avg(self):
@@ -768,7 +645,7 @@ class MetricMeter(object):
     
         
 def loss_fn(logits, targets):
-    loss_fct = BCEFocal2WayLoss()
+    loss_fct = torch.nn.BCEWithLogitsLoss(reduction="mean")
     loss = loss_fct(logits, targets)
     return loss
         
@@ -846,6 +723,44 @@ def valid_fn(model, data_loader, device):
     return scores.avg, losses.avg
 
 
+def get_model(name, num_classes=1, pretrained=True):
+    """
+    Loads a pretrained model.
+    Supports ResNest, ResNext-wsl, EfficientNet, ResNext and ResNet.
+
+    Arguments:
+        name {str} -- Name of the model to load
+
+    Keyword Arguments:
+        num_classes {int} -- Number of classes to use (default: {1})
+
+    Returns:
+        torch model -- Pretrained model
+    """
+    if "resnest" in name:
+        model = getattr(resnest_torch, name)(pretrained=pretrained)
+    else:
+        model = timm.create_model(name, pretrained=pretrained)
+    if hasattr(model, "fc"):
+        nb_ft = model.fc.in_features
+        model.fc = nn.Linear(nb_ft, num_classes)
+    elif hasattr(model, "_fc"):
+        nb_ft = model._fc.in_features
+        model._fc = nn.Linear(nb_ft, num_classes)
+    elif hasattr(model, "classifier"):
+        nb_ft = model.classifier.in_features
+        model.classifier = nn.Linear(nb_ft, num_classes)
+    elif hasattr(model, "last_linear"):
+        nb_ft = model.last_linear.in_features
+        model.last_linear = nn.Linear(nb_ft, num_classes)
+    elif hasattr(model, "head"):
+        nb_ft = model.head.fc.in_features
+        model.head.fc = nn.Linear(nb_ft, num_classes)
+    else:
+        raise NotImplementedError
+    return model
+
+
 mean = (0.485, 0.456, 0.406) # RGB
 std = (0.229, 0.224, 0.225) # RGB
 
@@ -913,11 +828,7 @@ for fold in range(5):
         for phase, df_ in zip(["train", "valid"], [trn_df, val_df])
     }
 
-    model = TimmSED(
-        base_model_name=CFG.base_model_name,
-        pretrained=CFG.pretrained,
-        num_classes=CFG.num_classes,
-        in_channels=CFG.in_channels)
+    model = get_model('densenet121', num_classes=398)
 
     optimizer = torch.optim.Adam(model.parameters(), lr=CFG.LR)
     scheduler = torch.optim.lr_scheduler.CosineAnnealingWarmRestarts(optimizer, T_0=16, T_mult=1)
